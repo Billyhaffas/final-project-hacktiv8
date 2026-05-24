@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -36,17 +35,8 @@ func ConnectMongo() *mongo.Collection {
 		log.Fatal("convert-emission-service: mongo ping error:", err)
 	}
 
-	col := client.Database("carbon_prices_db").Collection("carbon_prices")
+	col := client.Database("climate_action_masterdata").Collection("carbon_prices")
 
-	idx := mongo.IndexModel{
-		Keys:    bson.D{{Key: "Id", Value: 1}},
-		Options: options.Index().SetUnique(true).SetName("idx_carbon_prices_id"),
-	}
-
-	if _, err := col.Indexes().CreateOne(ctx, idx); err != nil {
-		log.Println("convert-emission-service: index warning:", err)
-	}
-
-	log.Println("convert-emission-service: connected to carbon_prices_db")
+	log.Println("convert-emission-service: connected to climate_action_masterdata")
 	return col
 }

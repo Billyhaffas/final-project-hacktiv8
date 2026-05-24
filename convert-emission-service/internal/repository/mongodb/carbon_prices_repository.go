@@ -8,17 +8,18 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-type MongoEmissionRepository struct {
+type MongoCarbonPricesRepository struct {
 	collection *mongo.Collection
 }
 
-func NewMongoEmissionRepository(collection *mongo.Collection) domain.EmissionRepository {
-	return &MongoEmissionRepository{
+// Renamed from NewMongoEmissionRepository
+func NewMongoCarbonPricesRepository(collection *mongo.Collection) domain.CarbonPriceRepository {
+	return &MongoCarbonPricesRepository{
 		collection: collection,
 	}
 }
 
-func (r *MongoEmissionRepository) BulkInsert(ctx context.Context, emissions []domain.Emission) (bool, error) {
+func (r *MongoCarbonPricesRepository) BulkInsert(ctx context.Context, carbonPrices []domain.CarbonPrice) (bool, error) {
 	// Check if records already exist
 	count, err := r.collection.CountDocuments(ctx, bson.D{})
 	if err != nil {
@@ -29,14 +30,14 @@ func (r *MongoEmissionRepository) BulkInsert(ctx context.Context, emissions []do
 		return false, nil // Data exists, safely skip insertion
 	}
 
-	if len(emissions) == 0 {
+	if len(carbonPrices) == 0 {
 		return false, nil
 	}
 
 	// Prepare documents for bulk write
 	var documents []interface{}
-	for _, e := range emissions {
-		documents = append(documents, e)
+	for _, cp := range carbonPrices {
+		documents = append(documents, cp)
 	}
 
 	// Perform the insertion
