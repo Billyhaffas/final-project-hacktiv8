@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type CSVProvider struct {
@@ -36,12 +37,13 @@ func (p *CSVProvider) FetchEmissions(ctx context.Context) ([]domain.Emission, er
 
 	reader := csv.NewReader(resp.Body)
 
-	// Skip header row
+	// Skip header row (Entity, Code, Year, "Annual CO₂ emissions (per capita)")
 	if _, err := reader.Read(); err != nil {
 		return nil, err
 	}
 
 	var emissions []domain.Emission
+	now := time.Now().UTC()
 
 	for {
 		record, err := reader.Read()
@@ -59,23 +61,27 @@ func (p *CSVProvider) FetchEmissions(ctx context.Context) ([]domain.Emission, er
 		entity := record[0]
 		code := record[1]
 		year, _ := strconv.Atoi(record[2])
-		perCapita, _ := strconv.ParseFloat(record[3], 64)
+		perCapitaAnnualTonnes, _ := strconv.ParseFloat(record[3], 64)
 
-		// Some region entries do not have a country code (like 'Africa' or 'World').
-		// If the code field is blank, fallback to using the entity name for a unique key string.
-		uniqueGroup := code
-		if uniqueGroup == "" {
-			uniqueGroup = entity
+		// Fallback logic if regional code is missing
+		countryCode := code
+		if countryCode == "" {
+			countryCode = entity
 		}
 
-		computedID := fmt.Sprintf("%s-%d", uniqueGroup, year)
+		// Calculate Daily Limit in kg from Annual Tonnes:
+		// (Tonnes * 1000) / 365.25 days
+		dailyLimitKg := (perCapitaAnnualTonnes * 1000.0) / 365.25
+
+		// Establish primary key pattern based on context requirements
+		computedID := fmt.Sprintf("%s-%d", countryCode, year)
 
 		emissions = append(emissions, domain.Emission{
-			Id:        computedID,
-			Entity:    entity,
-			Code:      code,
-			Year:      year,
-			PerCapita: perCapita,
+			Id:              computedID,
+			CountryCode:     countryCode,
+			DailyLimitKgCo2: dailyLimitKg,
+			SourceUrl:       p.url,
+			UpdatedAt:       now,
 		})
 	}
 

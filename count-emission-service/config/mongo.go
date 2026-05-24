@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -19,34 +18,29 @@ func ConnectMongo() *mongo.Collection {
 		mongoURI = "mongodb://localhost:27017"
 	}
 
+	// Configure client options
 	opts := options.Client().
 		ApplyURI(mongoURI).
 		SetServerAPIOptions(serverAPI).
 		SetTimeout(10 * time.Second)
 
+	// Establish connection
 	client, err := mongo.Connect(opts)
 	if err != nil {
 		log.Fatal("count-emission-service: mongo connect error:", err)
 	}
 
+	// Use a fresh context for temporary lifecycle operations
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// Verify the connection is alive
 	if err = client.Ping(ctx, nil); err != nil {
 		log.Fatal("count-emission-service: mongo ping error:", err)
 	}
 
-	col := client.Database("threshold_db").Collection("threshold")
+	col := client.Database("climate_action_masterdata").Collection("emission_thresholds")
 
-	idx := mongo.IndexModel{
-		Keys:    bson.D{{Key: "Id", Value: 1}},
-		Options: options.Index().SetUnique(true).SetName("idx_threshold_id"),
-	}
-
-	if _, err := col.Indexes().CreateOne(ctx, idx); err != nil {
-		log.Println("count-emission-service: index warning:", err)
-	}
-
-	log.Println("count-emission-service: connected to threshold_db")
+	log.Println("count-emission-service: connected to climate_action_masterdata")
 	return col
 }

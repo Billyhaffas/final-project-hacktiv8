@@ -8,24 +8,31 @@ import (
 	"count-emission-service/internal/usecase"
 	"log"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 const csvURL = "https://ourworldindata.org/grapher/co-emissions-per-capita.csv?v=1&csvType=full&useColumnShortNames=false"
 
 func main() {
-	// 1. Fetch pre-configured collection directly
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, relying on system env variables")
+	}
+
+	// Connect to MongoDB
 	dbCol := config.ConnectMongo()
 
-	// 2. Set up a timeout context for the operations
+	// Set up a timeout context for the operations
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
-	// 3. Inject dependencies using Clean Architecture patterns
+	// Inject dependencies
 	repo := mongodb.NewMongoEmissionRepository(dbCol)
 	provider := remote.NewCSVProvider(csvURL)
 	seederUseCase := usecase.NewSeedEmissionUseCase(provider, repo)
 
-	// 4. Run the data seeding pipeline
+	// Run the data seeding pipeline
 	if err := seederUseCase.Execute(ctx); err != nil {
 		log.Fatalf("count-emission-service: seeding failed: %v", err)
 	}
