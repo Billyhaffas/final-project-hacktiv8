@@ -60,3 +60,11 @@ func (uc *EmissionUseCase) GetUserMonthlyEmission(ctx context.Context, userId in
 	}
 	return userMonthlyEmission, nil
 }
+
+func (uc *EmissionUseCase) GetUserYearlyEmission(ctx context.Context, userId int8) (*emission.UserYearlyEmission, error) {
+	userYearlyEmission, err := uc.EmissionRepository.GetUserYearlyEmission(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	return userYearlyEmission, nil
+}

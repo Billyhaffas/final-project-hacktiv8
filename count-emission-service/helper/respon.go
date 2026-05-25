@@ -24,6 +24,12 @@ type GetMonthlyUserEmissionTypeRespon struct {
 	Data    *emission.UserMonthlyEmission `json:"data"`
 }
 
+type GetYearlyUserEmissionTypeRespon struct {
+	Status  string                       `json:"status"`
+	Message string                       `json:"message"`
+	Data    *emission.UserYearlyEmission `json:"data"`
+}
+
 type GetAllUserTypeRespon struct {
 	Status  string                 `json:"status"`
 	Message string                 `json:"message"`

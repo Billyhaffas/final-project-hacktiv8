@@ -106,3 +106,71 @@ func (emr *EmissionRepository) GetUserMonthlyEmission(ctx context.Context, userI
 	userMonthlyEmission.TotalEmissionMonthlyKgCo2 = monthlyTotal
 	return &userMonthlyEmission, nil
 }
+
+func (emr *EmissionRepository) GetUserYearlyEmission(ctx context.Context, userId int8) (*emission.UserYearlyEmission, error) {
+	var (
+		result             []emission.UserMonthlyEmissionDetail
+		yearlyTotal        float64
+		monthlyErr         error
+		yearlyErr          error
+		userYearlyEmission emission.UserYearlyEmission
+		wg                 sync.WaitGroup
+	)
+
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+
+		monthlyErr = emr.DB.WithContext(ctx).
+			Table("emissions").
+			Select(`
+				user_id,
+				TRIM(TO_CHAR(DATE_TRUNC('month', recorded_at), 'Month')) as month,
+				SUM(emission_kg_co2) as total_emission_kg_co2
+			`).
+			Where(`
+				user_id = ?
+				AND DATE_TRUNC('year', recorded_at) =
+				    DATE_TRUNC('year', CURRENT_DATE)
+			`, userId).
+			Group(`
+				user_id,
+				DATE_TRUNC('month', recorded_at)
+			`).
+			Order(`
+				DATE_TRUNC('month', recorded_at) ASC
+			`).
+			Scan(&result).Error
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		yearlyErr = emr.DB.WithContext(ctx).
+			Table("emissions").
+			Select("SUM(emission_kg_co2)").
+			Where(`
+				user_id = ?
+				AND DATE_TRUNC('year', recorded_at) =
+				    DATE_TRUNC('year', CURRENT_DATE)
+			`, userId).
+			Scan(&yearlyTotal).Error
+	}()
+
+	wg.Wait()
+
+	if monthlyErr != nil {
+		return nil, monthlyErr
+	}
+
+	if yearlyErr != nil {
+		return nil, yearlyErr
+	}
+
+	userYearlyEmission.UserId = userId
+	userYearlyEmission.MonthlyEmissions = result
+	userYearlyEmission.TotalEmissionYearlyKgCo2 = yearlyTotal
+
+	return &userYearlyEmission, nil
+}

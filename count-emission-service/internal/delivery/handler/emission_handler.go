@@ -84,3 +84,26 @@ func (uh *EmissionHandler) GetUserMonthlyEmission(c *echo.Context) error {
 		Data:    userMonthlyEmission,
 	})
 }
+
+func (uh *EmissionHandler) GetUserYearlyEmission(c *echo.Context) error {
+	var userId int8
+	userId = 1
+	// if err != nil {
+	// 	return c.JSON(http.StatusBadRequest, helper.Respon{
+	// 		Status:  http.StatusText(http.StatusBadRequest),
+	// 		Message: "Invalid user ID",
+	// 	})
+	// }
+	userYearlyEmission, err := uh.EmissionUseCase.GetUserYearlyEmission(c.Request().Context(), userId)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, helper.Respon{
+			Status:  http.StatusText(http.StatusInternalServerError),
+			Message: err.Error(),
+		})
+	}
+	return c.JSON(http.StatusOK, helper.GetYearlyUserEmissionTypeRespon{
+		Status:  http.StatusText(http.StatusOK),
+		Message: "User yearly emission retrieved successfully",
+		Data:    userYearlyEmission,
+	})
+}
