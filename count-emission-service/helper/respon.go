@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"count-emission-service/internal/model/emission"
 	"count-emission-service/internal/model/user"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -11,10 +12,16 @@ type Respon struct {
 	Message string `json:"message"`
 }
 
-type GetUserTypeRespon struct {
-	Status  string                `json:"status"`
-	Message string                `json:"message"`
-	Data    *user.UserSelectModel `json:"data"`
+type GetDailyUserEmissionTypeRespon struct {
+	Status  string                      `json:"status"`
+	Message string                      `json:"message"`
+	Data    *emission.UserDailyEmission `json:"data"`
+}
+
+type GetMonthlyUserEmissionTypeRespon struct {
+	Status  string                        `json:"status"`
+	Message string                        `json:"message"`
+	Data    *emission.UserMonthlyEmission `json:"data"`
 }
 
 type GetAllUserTypeRespon struct {

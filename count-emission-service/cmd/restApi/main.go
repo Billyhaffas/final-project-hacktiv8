@@ -30,6 +30,8 @@ func main() {
 
 	e := echo.New()
 	e.POST("/emissions", emissionHandler.CreateUserEmission)
+	e.GET("/emissions/daily", emissionHandler.GetUserDailyEmission)
+	e.GET("/emissions/monthly", emissionHandler.GetUserMonthlyEmission)
 
 	e.Start(":8080")
 }

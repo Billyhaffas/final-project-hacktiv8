@@ -4,6 +4,8 @@ import (
 	"context"
 	"count-emission-service/internal/domain"
 	"count-emission-service/internal/model/emission"
+	"sync"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -24,4 +26,83 @@ func (emr *EmissionRepository) CreateUserEmission(ctx context.Context, req emiss
 		return err
 	}
 	return nil
+}
+
+func (emr *EmissionRepository) GetUserDailyEmission(ctx context.Context, userId int8) (*emission.UserDailyEmission, error) {
+	var userEmission emission.UserDailyEmission
+	userEmission.UserId = userId
+	err := emr.DB.WithContext(ctx).
+		Table("emissions").
+		Where("user_id = ? AND DATE(recorded_at) = ?", userId, time.Now().Format("2006-01-02")).
+		Select("SUM(emission_kg_co2)").Scan(&userEmission.TotalEmissionKgCo2).Error
+	userEmission.Date = time.Now().Format("2006-01-02")
+	if err != nil {
+		return nil, err
+	}
+	return &userEmission, nil
+}
+
+func (emr *EmissionRepository) GetUserMonthlyEmission(ctx context.Context, userId int8) (*emission.UserMonthlyEmission, error) {
+	var (
+		result              []emission.UserDailyEmission
+		monthlyTotal        float64
+		dailyErr            error
+		monthlyErr          error
+		userMonthlyEmission emission.UserMonthlyEmission
+		wg                  sync.WaitGroup
+	)
+
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+
+		dailyErr = emr.DB.WithContext(ctx).
+			Table("emissions").
+			Select(`
+			user_id,
+			TO_CHAR(recorded_at, 'YYYY-MM-DD') as date,
+			SUM(emission_kg_co2) as total_emission_kg_co2
+		`).
+			Where(`
+			user_id = ?
+			AND DATE_TRUNC('month', recorded_at) =
+			    DATE_TRUNC('month', CURRENT_DATE)
+		`, userId).
+			Group(`
+			user_id,
+			DATE(recorded_at)
+		`).
+			Order("date ASC").
+			Scan(&result).Error
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		monthlyErr = emr.DB.WithContext(ctx).
+			Table("emissions").
+			Select("SUM(emission_kg_co2)").
+			Where(`
+			user_id = ?
+			AND DATE_TRUNC('month', recorded_at) =
+			    DATE_TRUNC('month', CURRENT_DATE)
+		`, userId).
+			Scan(&monthlyTotal).Error
+	}()
+
+	wg.Wait()
+
+	if dailyErr != nil {
+		return nil, dailyErr
+	}
+
+	if monthlyErr != nil {
+		return nil, monthlyErr
+	}
+
+	userMonthlyEmission.UserId = userId
+	userMonthlyEmission.DailyEmissions = result
+	userMonthlyEmission.TotalEmissionMonthlyKgCo2 = monthlyTotal
+	return &userMonthlyEmission, nil
 }

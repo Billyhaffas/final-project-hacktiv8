@@ -38,3 +38,49 @@ func (uh *EmissionHandler) CreateUserEmission(c *echo.Context) error {
 		Message: "Emission has been created",
 	})
 }
+
+func (uh *EmissionHandler) GetUserDailyEmission(c *echo.Context) error {
+	var userId int8
+	userId = 1
+	// if err != nil {
+	// 	return c.JSON(http.StatusBadRequest, helper.Respon{
+	// 		Status:  http.StatusText(http.StatusBadRequest),
+	// 		Message: "Invalid user ID",
+	// 	})
+	// }
+	userEmission, err := uh.EmissionUseCase.GetUserDailyEmission(c.Request().Context(), userId)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, helper.Respon{
+			Status:  http.StatusText(http.StatusInternalServerError),
+			Message: err.Error(),
+		})
+	}
+	return c.JSON(http.StatusOK, helper.GetDailyUserEmissionTypeRespon{
+		Status:  http.StatusText(http.StatusOK),
+		Message: "User daily emission retrieved successfully",
+		Data:    userEmission,
+	})
+}
+
+func (uh *EmissionHandler) GetUserMonthlyEmission(c *echo.Context) error {
+	var userId int8
+	userId = 1
+	// if err != nil {
+	// 	return c.JSON(http.StatusBadRequest, helper.Respon{
+	// 		Status:  http.StatusText(http.StatusBadRequest),
+	// 		Message: "Invalid user ID",
+	// 	})
+	// }
+	userMonthlyEmission, err := uh.EmissionUseCase.GetUserMonthlyEmission(c.Request().Context(), userId)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, helper.Respon{
+			Status:  http.StatusText(http.StatusInternalServerError),
+			Message: err.Error(),
+		})
+	}
+	return c.JSON(http.StatusOK, helper.GetMonthlyUserEmissionTypeRespon{
+		Status:  http.StatusText(http.StatusOK),
+		Message: "User monthly emission retrieved successfully",
+		Data:    userMonthlyEmission,
+	})
+}

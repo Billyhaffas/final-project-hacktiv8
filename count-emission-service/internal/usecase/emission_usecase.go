@@ -5,7 +5,6 @@ import (
 	"count-emission-service/internal/domain"
 	"count-emission-service/internal/model/emission"
 	"count-emission-service/internal/model/thirdparty/carbonsutra"
-	"fmt"
 	"time"
 )
 
@@ -39,10 +38,25 @@ func (uc *EmissionUseCase) CreateUserEmission(ctx context.Context, request *emis
 	insertOrigin.EmissionKgCo2 = responTP.Data.Co2eKg
 	insertOrigin.RecordedAt = time.Now()
 	insertOrigin.CreatedAt = time.Now()
-	fmt.Println("EmissionKgCo2", insertOrigin.EmissionKgCo2)
 	err = uc.EmissionRepository.CreateUserEmission(ctx, insertOrigin)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (uc *EmissionUseCase) GetUserDailyEmission(ctx context.Context, userId int8) (*emission.UserDailyEmission, error) {
+	userEmission, err := uc.EmissionRepository.GetUserDailyEmission(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	return userEmission, nil
+}
+
+func (uc *EmissionUseCase) GetUserMonthlyEmission(ctx context.Context, userId int8) (*emission.UserMonthlyEmission, error) {
+	userMonthlyEmission, err := uc.EmissionRepository.GetUserMonthlyEmission(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	return userMonthlyEmission, nil
 }

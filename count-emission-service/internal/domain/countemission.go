@@ -13,10 +13,16 @@ type CarbonSutraRepository interface {
 }
 type EmissionRepository interface {
 	CreateUserEmission(ctx context.Context, req emission.EmissionOrigin) error
+	GetUserDailyEmission(ctx context.Context, userId int8) (*emission.UserDailyEmission, error)
+	GetUserMonthlyEmission(ctx context.Context, userId int8) (*emission.UserMonthlyEmission, error)
 }
 type EmissionUseCase interface {
 	CreateUserEmission(ctx context.Context, request *emission.EmissionBody) error
+	GetUserDailyEmission(ctx context.Context, userId int8) (*emission.UserDailyEmission, error)
+	GetUserMonthlyEmission(ctx context.Context, userId int8) (*emission.UserMonthlyEmission, error)
 }
 type EmissionHandler interface {
 	CreateUserEmission(c *echo.Context) error
+	GetUserDailyEmission(c *echo.Context) error
+	GetUserMonthlyEmission(c *echo.Context) error
 }

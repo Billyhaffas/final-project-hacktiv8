@@ -12,3 +12,15 @@ type Emission struct {
 	RecordedAt    time.Time
 	CreatedAt     time.Time
 }
+
+type UserDailyEmission struct {
+	UserId             int8
+	Date               string
+	TotalEmissionKgCo2 float64
+}
+
+type UserMonthlyEmission struct {
+	UserId                    int8
+	DailyEmissions            []UserDailyEmission
+	TotalEmissionMonthlyKgCo2 float64
+}
