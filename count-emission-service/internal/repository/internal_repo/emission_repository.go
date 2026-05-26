@@ -33,8 +33,13 @@ func (emr *EmissionRepository) GetUserDailyEmission(ctx context.Context, userId 
 	userEmission.UserId = userId
 	err := emr.DB.WithContext(ctx).
 		Table("emissions").
-		Where("user_id = ? AND DATE(recorded_at) = ?", userId, time.Now().Format("2006-01-02")).
-		Select("SUM(emission_kg_co2)").Scan(&userEmission.TotalEmissionKgCo2).Error
+		Where(
+			"user_id = ? AND DATE(recorded_at) = ?",
+			userId,
+			time.Now().Format("2006-01-02"),
+		).
+		Select("COALESCE(SUM(emission_kg_co2), 0)").
+		Scan(&userEmission.TotalEmissionKgCo2).Error
 	userEmission.Date = time.Now().Format("2006-01-02")
 	if err != nil {
 		return nil, err
