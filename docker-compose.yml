@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # 1. Count Emission Service
+  count-emission-service:
+    build:
+      context: ./count-emission-service
+      dockerfile: Dockerfile
+    container_name: count_emission_service
+    ports:
+      - '8081:8081'
+    environment:
+      - PORT=8081
+    # Env file reads local keys from your service folder
+    env_file:
+      - ./count-emission-service/.env
+    networks:
+      - emission-network
+
+  # 2. Notification Service
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: notification_service
+    ports:
+      - '8080:8080'
+    environment:
+      - PORT=8080
+      # Route internally to the sibling container within the docker bridge network
+      - EMISSION_SERVICE_URL=http://count-emission-service:8081
+    env_file:
+      - ./notification-service/.env
+    depends_on:
+      - count-emission-service
+    networks:
+      - emission-network
+
+networks:
+  emission-network:
+    driver: bridge

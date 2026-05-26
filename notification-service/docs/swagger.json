@@ -1,0 +1,62 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a microservice responsible for validating user carbon emission thresholds and managing notifications.",
+        "title": "Notification API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "paths": {
+        "/api/v1/notifications/check-emission": {
+            "post": {
+                "description": "Fetches recent emission counts, compares them against user preferences or MongoDB master fallbacks, and triggers a warning if breached.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Check and trigger emission notifications",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User Identification ID",
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Example: {'status':'success','limit_breached':true,'message':'Alert!...'}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Example: {'error':'invalid or missing user_id query param'}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Example: {'error':'internal database failure'}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
