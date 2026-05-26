@@ -45,7 +45,7 @@ func (uc *EmissionUseCase) CreateUserEmission(ctx context.Context, request *emis
 	return nil
 }
 
-func (uc *EmissionUseCase) GetUserDailyEmission(ctx context.Context, userId int8) (*emission.UserDailyEmission, error) {
+func (uc *EmissionUseCase) GetUserDailyEmission(ctx context.Context, userId int32) (*emission.UserDailyEmission, error) {
 	userEmission, err := uc.EmissionRepository.GetUserDailyEmission(ctx, userId)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (uc *EmissionUseCase) GetUserDailyEmission(ctx context.Context, userId int8
 	return userEmission, nil
 }
 
-func (uc *EmissionUseCase) GetUserMonthlyEmission(ctx context.Context, userId int8) (*emission.UserMonthlyEmission, error) {
+func (uc *EmissionUseCase) GetUserMonthlyEmission(ctx context.Context, userId int32) (*emission.UserMonthlyEmission, error) {
 	userMonthlyEmission, err := uc.EmissionRepository.GetUserMonthlyEmission(ctx, userId)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (uc *EmissionUseCase) GetUserMonthlyEmission(ctx context.Context, userId in
 	return userMonthlyEmission, nil
 }
 
-func (uc *EmissionUseCase) GetUserYearlyEmission(ctx context.Context, userId int8) (*emission.UserYearlyEmission, error) {
+func (uc *EmissionUseCase) GetUserYearlyEmission(ctx context.Context, userId int32) (*emission.UserYearlyEmission, error) {
 	userYearlyEmission, err := uc.EmissionRepository.GetUserYearlyEmission(ctx, userId)
 	if err != nil {
 		return nil, err
