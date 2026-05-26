@@ -1,56 +1,88 @@
 package main
 
 import (
-	"p3-lc01-billyhaffas/internal/delivery/cronjob"
-	"p3-lc01-billyhaffas/internal/delivery/handler"
-	"p3-lc01-billyhaffas/internal/infrastructure/database"
-	"p3-lc01-billyhaffas/internal/repository"
-	"p3-lc01-billyhaffas/internal/usecase"
-	"time"
+	"log"
+	"net/http"
+	"os"
 
-	"github.com/robfig/cron/v3"
+	"convert-emission-service/config"
+	handler "convert-emission-service/internal/delivery/http"
+	"convert-emission-service/internal/repository"
+	"convert-emission-service/internal/usecase"
 
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger"
+
+	_ "convert-emission-service/docs"
 )
 
+// @title           Convert Emission API
+// @version         1.0
+// @description     This is a microservice responsible for converting carbon emission into local currency.
 func main() {
-	database.ConnectDB()
-	usersCollection := database.DB.Collection("Users")
-	roomCollection := database.DB.Collection("Room")
-	transactionCollection := database.DB.Collection("Transactions")
+	// Set environment
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: .env file not found, relying on system environment variables")
+	}
 
-	//init repository
-	userRepository := repository.NewUserCollection(usersCollection)
-	roomRepository := repository.NewRoomCollection(roomCollection)
-	transactionRepository := repository.NewTransactionCollection(transactionCollection)
+	if os.Getenv("JWT_SECRET_KEY") == "" {
+		log.Fatal("Critical: JWT_SECRET_KEY is not set in the environment.")
+	}
 
-	//init usecase
-	userUseCase := usecase.NewUserUseCase(userRepository)
-	transactionUseCase := usecase.NewTransactionUseCase(transactionRepository, userRepository, roomRepository)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-	//init handler
-	userHandler := handler.NewUserHandler(userUseCase)
-	transactionHandler := handler.NewTransactionHandler(transactionUseCase)
+	// Initialize databases
+	mongoDBCol := config.ConnectMongo()
 
-	// init cron
-	transactionCron := cronjob.NewTransactionCronjob(transactionUseCase)
+	// Inject dependencies
+	priceRepo := repository.NewCarbonPriceRepository(mongoDBCol)
+	convUsecase := usecase.NewConversionUsecase(priceRepo)
+	convHandler := handler.NewConversionHandler(convUsecase)
 
-	echo := echo.New()
-	echo.POST("/users", userHandler.PostUser)
-	echo.GET("/users/:id", userHandler.GetUserById)
-	echo.GET("/users", userHandler.GetAllUser)
-	echo.DELETE("/users/:id", userHandler.DeleteUserById)
-	echo.PUT("/users/:id", userHandler.UpdateUserById)
+	// Setup HTTP server for health check and documentation
+	go func() {
+		// Health Check
+		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status": "Ok"}`))
+		})
 
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+		// Swagger UI
+		http.HandleFunc("/swagger/", httpSwagger.WrapHandler)
 
-	cronJob := cron.New(cron.WithLocation(loc))
-	transactionCron.DeleteCron(cronJob)
-	cronJob.Start()
+		log.Println("convert-emission service: HTTP server (health check and swagger) started on :8082")
+		log.Fatal(http.ListenAndServe(":8082", nil))
+	}()
 
-	echo.POST("/transaction", transactionHandler.CreateTransaction)
+	// Initialize echo
+	e := echo.New()
 
-	if err := echo.Start(":" + "8085"); err != nil {
-		echo.Logger.Error("failed to start server", "error", err)
+	// Setup Middleware
+	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogStatus:  true,
+		LogURI:     true,
+		LogMethod:  true,
+		LogLatency: true,
+		LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
+			log.Printf("%s %s → %d (%s)", v.Method, v.URI, v.Status, v.Latency)
+			return nil
+		},
+	}))
+	e.Use(middleware.Recover())
+
+	// Register routes
+	e.POST("/api/v1/convert/daily", convHandler.HandleDaily)
+	e.POST("/api/v1/convert/monthly", convHandler.HandleMonthly)
+	e.POST("/api/v1/convert/yearly", convHandler.HandleYearly)
+
+	// Start echo server
+	log.Printf("convert-emission service: HTTP server starting on :%s", port)
+	if err := e.Start(":" + port); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
 }
