@@ -29,6 +29,10 @@ func main() {
 	auth := api.Group("/auth")
 	auth.POST("/register", authHandler.Register)
 	auth.POST("/login", authHandler.Login)
+	auth.POST("/refresh", authHandler.Refresh)
+	auth.POST("/logout", authHandler.Logout)
+	auth.POST("/forgot-password", authHandler.ForgotPassword)
+	auth.POST("/reset-password", authHandler.ResetPassword)
 
 	port := os.Getenv("AUTH_PORT")
 	if port == "" {

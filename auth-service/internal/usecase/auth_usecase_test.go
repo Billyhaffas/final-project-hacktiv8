@@ -14,11 +14,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var _ domain.UserRepository = (*mockRepo)(nil)
+
 // --- mock repository ---
 
 type mockRepo struct {
-	findByEmail func(context.Context, string) (*user.User, error)
-	createUser  func(context.Context, string, string, string) (int, error)
+	findByEmail              func(context.Context, string) (*user.User, error)
+	createUser               func(context.Context, string, string, string) (int, error)
+	storeRefreshToken        func(context.Context, int, string, time.Time) error
+	findRefreshToken         func(context.Context, string) (*user.RefreshToken, error)
+	revokeRefreshToken       func(context.Context, string) error
+	storePasswordResetToken  func(context.Context, int, string, time.Time) error
+	findPasswordResetToken   func(context.Context, string) (*user.PasswordResetToken, error)
+	markPasswordResetTokenUsed func(context.Context, string) error
+	updatePassword           func(context.Context, int, string) error
 }
 
 func (m *mockRepo) FindByEmail(ctx context.Context, email string) (*user.User, error) {
@@ -33,6 +42,55 @@ func (m *mockRepo) CreateUser(ctx context.Context, name, email, hash string) (in
 		return m.createUser(ctx, name, email, hash)
 	}
 	return 0, nil
+}
+
+func (m *mockRepo) StoreRefreshToken(ctx context.Context, userID int, tokenHash string, expiresAt time.Time) error {
+	if m.storeRefreshToken != nil {
+		return m.storeRefreshToken(ctx, userID, tokenHash, expiresAt)
+	}
+	return nil
+}
+
+func (m *mockRepo) FindRefreshToken(ctx context.Context, tokenHash string) (*user.RefreshToken, error) {
+	if m.findRefreshToken != nil {
+		return m.findRefreshToken(ctx, tokenHash)
+	}
+	return nil, nil
+}
+
+func (m *mockRepo) RevokeRefreshToken(ctx context.Context, tokenHash string) error {
+	if m.revokeRefreshToken != nil {
+		return m.revokeRefreshToken(ctx, tokenHash)
+	}
+	return nil
+}
+
+func (m *mockRepo) StorePasswordResetToken(ctx context.Context, userID int, tokenHash string, expiresAt time.Time) error {
+	if m.storePasswordResetToken != nil {
+		return m.storePasswordResetToken(ctx, userID, tokenHash, expiresAt)
+	}
+	return nil
+}
+
+func (m *mockRepo) FindPasswordResetToken(ctx context.Context, tokenHash string) (*user.PasswordResetToken, error) {
+	if m.findPasswordResetToken != nil {
+		return m.findPasswordResetToken(ctx, tokenHash)
+	}
+	return nil, nil
+}
+
+func (m *mockRepo) MarkPasswordResetTokenUsed(ctx context.Context, tokenHash string) error {
+	if m.markPasswordResetTokenUsed != nil {
+		return m.markPasswordResetTokenUsed(ctx, tokenHash)
+	}
+	return nil
+}
+
+func (m *mockRepo) UpdatePassword(ctx context.Context, userID int, passwordHash string) error {
+	if m.updatePassword != nil {
+		return m.updatePassword(ctx, userID, passwordHash)
+	}
+	return nil
 }
 
 // bcryptHash produces a bcrypt hash using MinCost so tests run fast.
@@ -270,6 +328,196 @@ func TestLogin(t *testing.T) {
 				if resp.Email != "alice@example.com" {
 					t.Fatalf("want resp.Email=alice@example.com, got %s", resp.Email)
 				}
+			}
+		})
+	}
+}
+
+// --- ForgotPassword ---
+
+func TestForgotPassword(t *testing.T) {
+	tests := []struct {
+		name           string
+		req            user.ForgotPasswordRequest
+		repo           *mockRepo
+		wantErr        error
+		wantEmptyToken bool
+	}{
+		{
+			name: "success — returns raw token",
+			req:  user.ForgotPasswordRequest{Email: "alice@example.com"},
+			repo: &mockRepo{
+				findByEmail: func(_ context.Context, _ string) (*user.User, error) {
+					return &user.User{ID: 1, Email: "alice@example.com"}, nil
+				},
+			},
+		},
+		{
+			name: "email not found — returns empty token (no error)",
+			req:  user.ForgotPasswordRequest{Email: "ghost@example.com"},
+			repo: &mockRepo{
+				findByEmail: func(_ context.Context, _ string) (*user.User, error) { return nil, nil },
+			},
+			wantEmptyToken: true,
+		},
+		{
+			name:    "missing email",
+			req:     user.ForgotPasswordRequest{},
+			repo:    &mockRepo{},
+			wantErr: domain.ErrMissingFields,
+		},
+		{
+			name: "repo error on FindByEmail",
+			req:  user.ForgotPasswordRequest{Email: "alice@example.com"},
+			repo: &mockRepo{
+				findByEmail: func(_ context.Context, _ string) (*user.User, error) {
+					return nil, errors.New("db error")
+				},
+			},
+			wantErr: errors.New("any wrapped error"),
+		},
+		{
+			name: "repo error on StorePasswordResetToken",
+			req:  user.ForgotPasswordRequest{Email: "alice@example.com"},
+			repo: &mockRepo{
+				findByEmail: func(_ context.Context, _ string) (*user.User, error) {
+					return &user.User{ID: 1, Email: "alice@example.com"}, nil
+				},
+				storePasswordResetToken: func(_ context.Context, _ int, _ string, _ time.Time) error {
+					return errors.New("insert failed")
+				},
+			},
+			wantErr: errors.New("any wrapped error"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			uc := usecase.NewAuthUseCase(tt.repo)
+			resp, err := uc.ForgotPassword(context.Background(), tt.req)
+
+			if tt.wantErr != nil {
+				if err == nil {
+					t.Fatalf("expected error, got nil")
+				}
+				if errors.Is(tt.wantErr, domain.ErrMissingFields) {
+					if !errors.Is(err, domain.ErrMissingFields) {
+						t.Fatalf("want ErrMissingFields, got %v", err)
+					}
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tt.wantEmptyToken {
+				if resp.ResetToken != "" {
+					t.Fatalf("expected empty token for unknown email, got %q", resp.ResetToken)
+				}
+			} else {
+				if resp.ResetToken == "" {
+					t.Fatal("expected non-empty reset token")
+				}
+			}
+		})
+	}
+}
+
+// --- ResetPassword ---
+
+func TestResetPassword(t *testing.T) {
+	validToken := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+	tests := []struct {
+		name    string
+		req     user.ResetPasswordRequest
+		repo    *mockRepo
+		wantErr error
+	}{
+		{
+			name: "success",
+			req:  user.ResetPasswordRequest{Token: validToken, NewPassword: "newpass123"},
+			repo: &mockRepo{
+				findPasswordResetToken: func(_ context.Context, _ string) (*user.PasswordResetToken, error) {
+					return &user.PasswordResetToken{UserID: 1, IsUsed: false, ExpiresAt: time.Now().Add(time.Hour)}, nil
+				},
+			},
+		},
+		{
+			name:    "missing token",
+			req:     user.ResetPasswordRequest{NewPassword: "newpass123"},
+			repo:    &mockRepo{},
+			wantErr: domain.ErrMissingFields,
+		},
+		{
+			name:    "missing new password",
+			req:     user.ResetPasswordRequest{Token: validToken},
+			repo:    &mockRepo{},
+			wantErr: domain.ErrMissingFields,
+		},
+		{
+			name: "token not found",
+			req:  user.ResetPasswordRequest{Token: validToken, NewPassword: "newpass123"},
+			repo: &mockRepo{
+				findPasswordResetToken: func(_ context.Context, _ string) (*user.PasswordResetToken, error) {
+					return nil, nil
+				},
+			},
+			wantErr: domain.ErrResetTokenInvalid,
+		},
+		{
+			name: "token already used",
+			req:  user.ResetPasswordRequest{Token: validToken, NewPassword: "newpass123"},
+			repo: &mockRepo{
+				findPasswordResetToken: func(_ context.Context, _ string) (*user.PasswordResetToken, error) {
+					return &user.PasswordResetToken{UserID: 1, IsUsed: true, ExpiresAt: time.Now().Add(time.Hour)}, nil
+				},
+			},
+			wantErr: domain.ErrResetTokenUsed,
+		},
+		{
+			name: "token expired",
+			req:  user.ResetPasswordRequest{Token: validToken, NewPassword: "newpass123"},
+			repo: &mockRepo{
+				findPasswordResetToken: func(_ context.Context, _ string) (*user.PasswordResetToken, error) {
+					return &user.PasswordResetToken{UserID: 1, IsUsed: false, ExpiresAt: time.Now().Add(-time.Hour)}, nil
+				},
+			},
+			wantErr: domain.ErrResetTokenExpired,
+		},
+		{
+			name: "repo error on FindPasswordResetToken",
+			req:  user.ResetPasswordRequest{Token: validToken, NewPassword: "newpass123"},
+			repo: &mockRepo{
+				findPasswordResetToken: func(_ context.Context, _ string) (*user.PasswordResetToken, error) {
+					return nil, errors.New("db error")
+				},
+			},
+			wantErr: errors.New("any wrapped error"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			uc := usecase.NewAuthUseCase(tt.repo)
+			err := uc.ResetPassword(context.Background(), tt.req)
+
+			if tt.wantErr != nil {
+				if err == nil {
+					t.Fatalf("expected error, got nil")
+				}
+				for _, sentinel := range []error{
+					domain.ErrMissingFields, domain.ErrResetTokenInvalid,
+					domain.ErrResetTokenUsed, domain.ErrResetTokenExpired,
+				} {
+					if errors.Is(tt.wantErr, sentinel) && !errors.Is(err, sentinel) {
+						t.Fatalf("want %v, got %v", sentinel, err)
+					}
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
 		})
 	}
