@@ -5,7 +5,7 @@ import (
 )
 
 type EmissionOrigin struct {
-	UserId        int8      `json:"user_id"`
+	UserId        int32     `json:"user_id"`
 	VehicleType   string    `json:"vehicle_type"`
 	FuelType      string    `json:"fuel_type"`
 	DistanceKm    float64   `json:"distance_km"`
@@ -15,7 +15,7 @@ type EmissionOrigin struct {
 }
 
 type EmissionBody struct {
-	UserId      int8    `json:"user_id"`
+	UserId      int32   `json:"user_id"`
 	VehicleType string  `json:"vehicle_type"`
 	FuelType    string  `json:"fuel_type"`
 	DistanceKm  float64 `json:"distance_km"`

@@ -13,15 +13,15 @@ type CarbonSutraRepository interface {
 }
 type EmissionRepository interface {
 	CreateUserEmission(ctx context.Context, req emission.EmissionOrigin) error
-	GetUserDailyEmission(ctx context.Context, userId int8) (*emission.UserDailyEmission, error)
-	GetUserMonthlyEmission(ctx context.Context, userId int8) (*emission.UserMonthlyEmission, error)
-	GetUserYearlyEmission(ctx context.Context, userId int8) (*emission.UserYearlyEmission, error)
+	GetUserDailyEmission(ctx context.Context, userId int32) (*emission.UserDailyEmission, error)
+	GetUserMonthlyEmission(ctx context.Context, userId int32) (*emission.UserMonthlyEmission, error)
+	GetUserYearlyEmission(ctx context.Context, userId int32) (*emission.UserYearlyEmission, error)
 }
 type EmissionUseCase interface {
 	CreateUserEmission(ctx context.Context, request *emission.EmissionBody) error
-	GetUserDailyEmission(ctx context.Context, userId int8) (*emission.UserDailyEmission, error)
-	GetUserMonthlyEmission(ctx context.Context, userId int8) (*emission.UserMonthlyEmission, error)
-	GetUserYearlyEmission(ctx context.Context, userId int8) (*emission.UserYearlyEmission, error)
+	GetUserDailyEmission(ctx context.Context, userId int32) (*emission.UserDailyEmission, error)
+	GetUserMonthlyEmission(ctx context.Context, userId int32) (*emission.UserMonthlyEmission, error)
+	GetUserYearlyEmission(ctx context.Context, userId int32) (*emission.UserYearlyEmission, error)
 }
 type EmissionHandler interface {
 	CreateUserEmission(c *echo.Context) error
