@@ -2,62 +2,41 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"time"
+	"strconv"
+
+	"notification-service/internal/domain"
+	pbemission "notification-service/proto/emission"
+
+	"google.golang.org/grpc/metadata"
 )
 
-type UserDailyEmission struct {
-	UserId             int8    `json:"UserId"`
-	Date               string  `json:"Date"`
-	TotalEmissionKgCo2 float64 `json:"TotalEmissionKgCo2"`
+type emissionGRPCClient struct {
+	client pbemission.EmissionClient
 }
 
-type EmissionClient struct {
-	httpClient *http.Client
-	baseURL    string
+func NewEmissionGRPCClient(client pbemission.EmissionClient) domain.EmissionClient {
+	return &emissionGRPCClient{client: client}
 }
 
-func NewEmissionClient(baseURL string) *EmissionClient {
-	return &EmissionClient{
-		httpClient: &http.Client{Timeout: 5 * time.Second},
-		baseURL:    baseURL,
-	}
-}
-
-type getDailyUserEmissionTypeRespon struct {
-	Status  string             `json:"status"`
-	Message string             `json:"message"`
-	Data    *UserDailyEmission `json:"data"`
-}
-
-func (c *EmissionClient) GetDailyEmission(ctx context.Context, userID int) (*UserDailyEmission, error) {
-	url := fmt.Sprintf("%s/api/v1/emissions/daily?user_id=%d", c.baseURL, userID)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+func (c *emissionGRPCClient) GetDailyTotal(ctx context.Context, userID int32, date string) (float64, error) {
+	resp, err := c.client.GetDailyTotal(ctx, &pbemission.DailyTotalRequest{
+		UserId: userID,
+		Date:   date,
+	})
 	if err != nil {
-		return nil, err
+		return 0, fmt.Errorf("GetDailyTotal: %w", err)
 	}
+	return float64(resp.DailyTotalKg), nil
+}
 
-	resp, err := c.httpClient.Do(req)
+func (c *emissionGRPCClient) GetUserPreferences(ctx context.Context, userID int32) (string, float64, error) {
+	md := metadata.Pairs("user-id", strconv.Itoa(int(userID)))
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	resp, err := c.client.GetUserPreferences(ctx, &pbemission.Empty{})
 	if err != nil {
-		return nil, err
+		return "", 0, fmt.Errorf("GetUserPreferences: %w", err)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("emission service returned status: %d", resp.StatusCode)
-	}
-
-	var apiRes getDailyUserEmissionTypeRespon
-	if err := json.NewDecoder(resp.Body).Decode(&apiRes); err != nil {
-		return nil, err
-	}
-
-	if apiRes.Data == nil {
-		return nil, fmt.Errorf("no emission data found for user")
-	}
-
-	return apiRes.Data, nil
+	return resp.CountryCode, resp.CustomDailyLimitKgCo2, nil
 }

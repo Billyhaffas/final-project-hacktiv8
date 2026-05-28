@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package notification;
+
+option go_package = "notification-service/proto/generated";
+
+service Notification {
+  rpc CheckDailyAlert(DailyAlertRequest) returns (DailyAlertResponse);
+}
+
+message DailyAlertRequest {
+  int32 user_id = 1;
+  string date    = 2; // YYYY-MM-DD; empty = today
+}
+
+message DailyAlertResponse {
+  bool   is_exceeded      = 1;
+  float  daily_total_kg   = 2;
+  float  daily_limit_kg   = 3;
+  string threshold_source = 4; // "user" or "country"
+  string message          = 5;
+}

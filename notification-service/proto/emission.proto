@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+// Client-side contract matching count-emission-service.
+// Only the RPCs notification-service needs are declared here.
+package generated;
+
+option go_package = "notification-service/proto/emission";
+
+service Emission {
+  rpc GetDailyTotal       (DailyTotalRequest)       returns (DailyTotalResponse);
+  rpc GetUserPreferences  (Empty)                   returns (UserPreferences);
+}
+
+message Empty {}
+
+message DailyTotalRequest {
+  int32  user_id = 1;
+  string date    = 2; // YYYY-MM-DD
+}
+
+message DailyTotalResponse {
+  float daily_total_kg = 1;
+  int32 trip_count     = 2;
+}
+
+message UserPreferences {
+  int32  user_id                  = 1;
+  string country_code             = 2;
+  double custom_daily_limit_kg_co2 = 3;
+}

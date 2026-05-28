@@ -2,81 +2,73 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"notification-service/internal/domain"
-	"notification-service/internal/repository"
+	"time"
 
-	"gorm.io/gorm"
+	"notification-service/internal/domain"
 )
 
+// countryDefaultLimits holds the daily CO₂ limit (kg) per country code.
+// Source: Our World in Data — 2.3 tons/year ÷ 365 for IDN.
+var countryDefaultLimits = map[string]float64{
+	"IDN": 6.3,
+}
+
+const fallbackDailyLimitKg = 6.3
+
 type notificationUsecase struct {
-	prefRepo       domain.PreferenceRepository  // PostgreDB
-	masterRepo     domain.MasterLimitRepository // MongoDB
-	emissionClient *repository.EmissionClient   // count-service
+	emissionClient domain.EmissionClient
 }
 
-func NewNotificationUsecase(
-	p domain.PreferenceRepository,
-	m domain.MasterLimitRepository,
-	e *repository.EmissionClient,
-) domain.NotificationUsecase {
-	return &notificationUsecase{
-		prefRepo:       p,
-		masterRepo:     m,
-		emissionClient: e,
+func NewNotificationUsecase(ec domain.EmissionClient) domain.NotificationUsecase {
+	return &notificationUsecase{emissionClient: ec}
+}
+
+func (u *notificationUsecase) CheckDailyAlert(
+	ctx context.Context,
+	userID int32,
+	date string,
+) (bool, float64, float64, string, string, error) {
+	if date == "" {
+		date = time.Now().Format("2006-01-02")
 	}
-}
 
-func (u *notificationUsecase) CheckAndSendNotification(ctx context.Context, userID int) (bool, string, error) {
-	// 1. Fetch current daily emissions from the external API
-	currentEmission, err := u.emissionClient.GetDailyEmission(ctx, userID)
+	dailyTotal, err := u.emissionClient.GetDailyTotal(ctx, userID, date)
 	if err != nil {
-		return false, "", fmt.Errorf("failed to fetch current emissions: %w", err)
+		return false, 0, 0, "", "", fmt.Errorf("CheckDailyAlert: %w", err)
 	}
 
-	// 2. Fetch user threshold preferences from Postgres
-	pref, err := u.prefRepo.GetByUserID(ctx, userID)
-
-	// Separate true DB connection errors from a missing preferences row record
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return false, "", fmt.Errorf("failed to fetch user preferences: %w", err)
+	countryCode, customLimit, err := u.emissionClient.GetUserPreferences(ctx, userID)
+	if err != nil {
+		return false, 0, 0, "", "", fmt.Errorf("CheckDailyAlert: %w", err)
 	}
 
-	var allowedLimit float64
-	var countryCode string
+	var dailyLimit float64
+	var thresholdSource string
 
-	// 3. Fallback evaluation logic
-	// If preference record is missing completely, or custom limit isn't valid/configured (<= 0)
-	if errors.Is(err, gorm.ErrRecordNotFound) || pref.CustomDailyLimitKgCo2 <= 0 {
-
-		// Fallback to a default country code if preference row does not exist entirely
-		countryCode = "IDN"
-		if pref != nil && pref.CountryCode != "" {
-			countryCode = pref.CountryCode
-		}
-
-		// Fetch the latest master baseline threshold from MongoDB for this country code
-		fallbackLimit, err := u.masterRepo.GetDefaultLimitByCountry(ctx, countryCode)
-		if err != nil {
-			return false, "", fmt.Errorf("failed to fetch master fallback limit for country %s: %w", countryCode, err)
-		}
-		allowedLimit = fallbackLimit
+	if customLimit > 0 {
+		dailyLimit = customLimit
+		thresholdSource = "user"
 	} else {
-		// If custom preference is present and explicitly filled out, use it
-		allowedLimit = pref.CustomDailyLimitKgCo2
-		countryCode = pref.CountryCode
+		if limit, ok := countryDefaultLimits[countryCode]; ok {
+			dailyLimit = limit
+		} else {
+			dailyLimit = fallbackDailyLimitKg
+		}
+		thresholdSource = "country"
 	}
 
-	// 4. Check if threshold limit is breached
-	if currentEmission.TotalEmissionKgCo2 > allowedLimit {
-		msg := fmt.Sprintf(
-			"Alert! Your daily carbon emission (%.2f kg CO2) has exceeded your allowed limit of %.2f kg CO2.",
-			currentEmission.TotalEmissionKgCo2,
-			allowedLimit,
+	isExceeded := dailyTotal > dailyLimit
+
+	var msg string
+	if isExceeded {
+		msg = fmt.Sprintf(
+			"Alert! Your daily carbon emission (%.2f kg CO₂) has exceeded your limit of %.2f kg CO₂.",
+			dailyTotal, dailyLimit,
 		)
-		return true, msg, nil
+	} else {
+		msg = "Your emission is within safe limits."
 	}
 
-	return false, "Emission within safe limits", nil
+	return isExceeded, dailyTotal, dailyLimit, thresholdSource, msg, nil
 }
