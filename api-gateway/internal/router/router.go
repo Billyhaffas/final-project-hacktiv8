@@ -7,7 +7,8 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
-func Setup(e *echo.Echo, auth *handler.AuthHandler, emission *handler.EmissionHandler, pref *handler.PreferenceHandler) {
+func Setup(e *echo.Echo, auth *handler.AuthHandler, emission *handler.EmissionHandler,
+	pref *handler.PreferenceHandler, alert *handler.AlertHandler, cvt *handler.ConvertHandler) {
 	api := e.Group("/api/v1")
 
 	// Auth — proxied to auth-service
@@ -23,9 +24,9 @@ func Setup(e *echo.Echo, auth *handler.AuthHandler, emission *handler.EmissionHa
 	emissionGroup := api.Group("/emissions", mw.JWT)
 	emissionGroup.POST("", emission.LogEmission)
 	emissionGroup.GET("/today", emission.GetDailyTotal)
-	emissionGroup.GET("/alert", emission.GetAlert)
+	emissionGroup.GET("/alert", alert.CheckAlert)
 	emissionGroup.GET("/report", emission.GetMonthlyReport)
-	emissionGroup.GET("/convert", emission.ConvertToIDR)
+	emissionGroup.GET("/convert", cvt.ConvertToIDR)
 
 	// Preferences — require JWT
 	prefGroup := api.Group("/preferences", mw.JWT)

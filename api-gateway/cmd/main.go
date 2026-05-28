@@ -4,6 +4,8 @@ import (
 	"api-gateway/internal/handler"
 	"api-gateway/internal/router"
 	pb "api-gateway/proto/emission"
+	pbconvert "api-gateway/proto/convert"
+	pbnotif "api-gateway/proto/notification"
 	"log"
 	"os"
 
@@ -27,13 +29,36 @@ func main() {
 	}
 	defer emissionConn.Close()
 
+	notifConn, err := grpc.NewClient(
+		os.Getenv("NOTIFICATION_SERVICE_ADDR"),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalf("failed to connect to notification-service: %v", err)
+	}
+	defer notifConn.Close()
+
+	convertConn, err := grpc.NewClient(
+		os.Getenv("CONVERT_EMISSION_SERVICE_ADDR"),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalf("failed to connect to convert-emission-service: %v", err)
+	}
+	defer convertConn.Close()
+
 	emissionClient := pb.NewEmissionClient(emissionConn)
+	notifClient := pbnotif.NewNotificationClient(notifConn)
+	convertClient := pbconvert.NewConvertClient(convertConn)
+
 	authHandler := handler.NewAuthHandler()
 	emissionHandler := handler.NewEmissionHandler(emissionClient)
 	prefHandler := handler.NewPreferenceHandler(emissionClient)
+	alertHandler := handler.NewAlertHandler(notifClient)
+	convertHandler := handler.NewConvertHandler(convertClient)
 
 	e := echo.New()
-	router.Setup(e, authHandler, emissionHandler, prefHandler)
+	router.Setup(e, authHandler, emissionHandler, prefHandler, alertHandler, convertHandler)
 
 	port := os.Getenv("GATEWAY_PORT")
 	if port == "" {

@@ -8,25 +8,25 @@ import (
 // Request model
 
 type UserDailyEmission struct {
-	UserId             int8    `json:"user_id"`
+	UserId             int32   `json:"user_id"`
 	Date               string  `json:"date"`
 	TotalEmissionKgCo2 float64 `json:"total_emission_kg_co2"`
 }
 
 type UserMonthlyEmissionDetail struct {
-	UserId             int8    `json:"user_id"`
+	UserId             int32   `json:"user_id"`
 	Month              string  `json:"month"`
 	TotalEmissionKgCo2 float64 `json:"total_emission_kg_co2"`
 }
 
 type UserMonthlyEmission struct {
-	UserId                    int8                `json:"user_id"`
+	UserId                    int32               `json:"user_id"`
 	DailyEmissions            []UserDailyEmission `json:"daily_emissions"`
 	TotalEmissionMonthlyKgCo2 float64             `json:"total_emission_monthly_kg_co2"`
 }
 
 type UserYearlyEmission struct {
-	UserId                   int8                        `json:"user_id"`
+	UserId                   int32                       `json:"user_id"`
 	MonthlyEmissions         []UserMonthlyEmissionDetail `json:"monthly_emissions"`
 	TotalEmissionYearlyKgCo2 float64                     `json:"total_emission_yearly_kg_co2"`
 }
@@ -52,19 +52,19 @@ type CarbonCostValuation struct {
 // Response
 
 type UserDailyCostResponse struct {
-	UserId    int8                `json:"user_id"`
+	UserId    int32               `json:"user_id"`
 	Date      string              `json:"date"`
 	Valuation CarbonCostValuation `json:"valuation"`
 }
 
 type UserMonthlyCostResponse struct {
-	UserId          int8                    `json:"user_id"`
+	UserId          int32                   `json:"user_id"`
 	DailyCostDetail []UserDailyCostResponse `json:"daily_cost_detail"`
 	TotalValuation  CarbonCostValuation     `json:"total_valuation"`
 }
 
 type UserYearlyCostResponse struct {
-	UserId            int8                      `json:"user_id"`
+	UserId            int32                     `json:"user_id"`
 	MonthlyCostDetail []UserMonthlyCostResponse `json:"monthly_cost_detail"`
 	TotalValuation    CarbonCostValuation       `json:"total_valuation"`
 }
