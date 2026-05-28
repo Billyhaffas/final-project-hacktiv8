@@ -72,6 +72,7 @@ type UserYearlyCostResponse struct {
 // CarbonPriceRepository manages querying conversion rate metrics
 type CarbonPriceRepository interface {
 	GetLatestRateByCountryCode(ctx context.Context, countryCode string) (*CarbonPrice, error)
+	GetLatest(ctx context.Context) (*CarbonPrice, error)
 }
 
 // ConversionUsecase encapsulates the calculation orchestrations
@@ -79,4 +80,5 @@ type ConversionUsecase interface {
 	ConvertDailyEmission(ctx context.Context, countryCode string, emission UserDailyEmission) (*UserDailyCostResponse, error)
 	ConvertMonthlyEmission(ctx context.Context, countryCode string, emission UserMonthlyEmission) (*UserMonthlyCostResponse, error)
 	ConvertYearlyEmission(ctx context.Context, countryCode string, emission UserYearlyEmission) (*UserYearlyCostResponse, error)
+	ConvertToIDR(ctx context.Context, emissionKgCo2 float64) (pricePerTonUsd, exchangeRateUsdIdr, totalIdr float64, err error)
 }

@@ -39,7 +39,7 @@ func ConnectMongo() *mongo.Collection {
 		log.Fatal("convert-emission-service: mongo ping error:", err)
 	}
 
-	col := client.Database("climate_action_masterdata").Collection("emission_thresholds")
+	col := client.Database("climate_action_masterdata").Collection("carbon_prices")
 
 	log.Println("convert-emission-service: connected to mongo database: climate_action_masterdata (collection: carbon_prices)")
 	return col

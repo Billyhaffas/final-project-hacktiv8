@@ -63,6 +63,16 @@ func (u *conversionUsecase) ConvertMonthlyEmission(ctx context.Context, countryC
 	}, nil
 }
 
+func (u *conversionUsecase) ConvertToIDR(ctx context.Context, emissionKgCo2 float64) (pricePerTonUsd, exchangeRateUsdIdr, totalIdr float64, err error) {
+	rate, err := u.repo.GetLatest(ctx)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("failed to fetch carbon price: %w", err)
+	}
+	metricTons := emissionKgCo2 / 1000.0
+	totalIdr = metricTons * rate.PricePerTonUsd * rate.UsdCurRate
+	return rate.PricePerTonUsd, rate.UsdCurRate, totalIdr, nil
+}
+
 func (u *conversionUsecase) ConvertYearlyEmission(ctx context.Context, countryCode string, emission domain.UserYearlyEmission) (*domain.UserYearlyCostResponse, error) {
 	rate, err := u.repo.GetLatestRateByCountryCode(ctx, countryCode)
 	if err != nil {

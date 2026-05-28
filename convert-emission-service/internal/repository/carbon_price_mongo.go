@@ -26,6 +26,25 @@ func NewCarbonPriceRepository(col *mongo.Collection) domain.CarbonPriceRepositor
 	return &carbonPriceRepository{collection: col}
 }
 
+func (r *carbonPriceRepository) GetLatest(ctx context.Context) (*domain.CarbonPrice, error) {
+	var result CarbonPriceDBModel
+	opts := options.FindOne().SetSort(bson.D{
+		{Key: "fetched_at", Value: -1},
+		{Key: "_id", Value: -1},
+	})
+	err := r.collection.FindOne(ctx, bson.M{}, opts).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+	return &domain.CarbonPrice{
+		ID:             result.ID,
+		PricePerTonUsd: result.PricePerTonUsd,
+		UsdCurRate:     result.UsdCurRate,
+		Source:         result.Source,
+		FetchedAt:      result.FetchedAt,
+	}, nil
+}
+
 func (r *carbonPriceRepository) GetLatestRateByCountryCode(ctx context.Context, countryCode string) (*domain.CarbonPrice, error) {
 	var result CarbonPriceDBModel
 
