@@ -136,6 +136,98 @@ All responses use a standard envelope:
 { "success": false, "error": { "code": "VALIDATION_ERROR", "message": "..." } }
 ```
 
+## Usage Examples
+
+### 1. Register
+```http
+POST /api/v1/auth/register
+Content-Type: application/json
+
+{
+  "name": "Rizal",
+  "email": "rizal@example.com",
+  "password": "password123"
+}
+```
+Response `201`:
+```json
+{ "success": true, "data": { "user_id": 1, "email": "rizal@example.com", "name": "Rizal" } }
+```
+
+### 2. Login
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "rizal@example.com",
+  "password": "password123"
+}
+```
+Response `200`:
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJ...",
+    "refresh_token": "abc123...",
+    "user_id": 1,
+    "email": "rizal@example.com"
+  }
+}
+```
+Save the `token` — use it in all protected requests.
+
+### 3. Using the Token
+Add this header to every protected request:
+```http
+Authorization: Bearer eyJ...
+```
+
+### 4. Refresh Token (when JWT expires)
+```http
+POST /api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "abc123..."
+}
+```
+Response `200` → returns a new `token` and `refresh_token`.
+
+### 5. Logout
+```http
+POST /api/v1/auth/logout
+Authorization: Bearer eyJ...
+Content-Type: application/json
+
+{
+  "refresh_token": "abc123..."
+}
+```
+
+### 6. Forgot Password
+```http
+POST /api/v1/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "rizal@example.com"
+}
+```
+Returns a `reset_token` directly in the response (MVP — no email sending).
+
+### 7. Reset Password
+```http
+POST /api/v1/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "<reset_token from step 6>",
+  "new_password": "newpassword456"
+}
+```
+
 ## Running Tests
 
 ```bash
