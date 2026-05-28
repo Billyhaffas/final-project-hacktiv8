@@ -80,3 +80,11 @@ func (h *EmissionHandler) GetMonthlyReport(c *echo.Context) error {
 
 	return c.JSON(http.StatusOK, helper.Success(resp))
 }
+
+func (h *EmissionHandler) GetAlert(c *echo.Context) error {
+	return c.JSON(http.StatusNotImplemented, helper.Fail("NOT_IMPLEMENTED", "notification service not ready"))
+}
+
+func (h *EmissionHandler) ConvertToIDR(c *echo.Context) error {
+	return c.JSON(http.StatusNotImplemented, helper.Fail("NOT_IMPLEMENTED", "convert service not ready"))
+}

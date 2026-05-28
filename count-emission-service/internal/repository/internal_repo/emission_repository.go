@@ -28,13 +28,18 @@ func (emr *EmissionRepository) CreateUserEmission(ctx context.Context, req emiss
 	return nil
 }
 
-func (emr *EmissionRepository) GetUserDailyEmission(ctx context.Context, userId int8) (*emission.UserDailyEmission, error) {
+func (emr *EmissionRepository) GetUserDailyEmission(ctx context.Context, userId int32) (*emission.UserDailyEmission, error) {
 	var userEmission emission.UserDailyEmission
 	userEmission.UserId = userId
 	err := emr.DB.WithContext(ctx).
 		Table("emissions").
-		Where("user_id = ? AND DATE(recorded_at) = ?", userId, time.Now().Format("2006-01-02")).
-		Select("SUM(emission_kg_co2)").Scan(&userEmission.TotalEmissionKgCo2).Error
+		Where(
+			"user_id = ? AND DATE(recorded_at) = ?",
+			userId,
+			time.Now().Format("2006-01-02"),
+		).
+		Select("COALESCE(SUM(emission_kg_co2), 0)").
+		Scan(&userEmission.TotalEmissionKgCo2).Error
 	userEmission.Date = time.Now().Format("2006-01-02")
 	if err != nil {
 		return nil, err
@@ -42,7 +47,7 @@ func (emr *EmissionRepository) GetUserDailyEmission(ctx context.Context, userId 
 	return &userEmission, nil
 }
 
-func (emr *EmissionRepository) GetUserMonthlyEmission(ctx context.Context, userId int8) (*emission.UserMonthlyEmission, error) {
+func (emr *EmissionRepository) GetUserMonthlyEmission(ctx context.Context, userId int32) (*emission.UserMonthlyEmission, error) {
 	var (
 		result              []emission.UserDailyEmission
 		monthlyTotal        float64
@@ -107,7 +112,7 @@ func (emr *EmissionRepository) GetUserMonthlyEmission(ctx context.Context, userI
 	return &userMonthlyEmission, nil
 }
 
-func (emr *EmissionRepository) GetUserYearlyEmission(ctx context.Context, userId int8) (*emission.UserYearlyEmission, error) {
+func (emr *EmissionRepository) GetUserYearlyEmission(ctx context.Context, userId int32) (*emission.UserYearlyEmission, error) {
 	var (
 		result             []emission.UserMonthlyEmissionDetail
 		yearlyTotal        float64

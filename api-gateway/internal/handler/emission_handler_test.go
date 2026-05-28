@@ -217,3 +217,29 @@ func TestGetMonthlyReport(t *testing.T) {
 		})
 	}
 }
+
+// --- Stub handlers ---
+
+func TestGetAlert_ReturnsNotImplemented(t *testing.T) {
+	e := echo.New()
+	h := handler.NewEmissionHandler(&mockEmissionClient{})
+	c, rec := newCtxWithUser(e, http.MethodGet, "", 1)
+	if err := h.GetAlert(c); err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("want 501, got %d", rec.Code)
+	}
+}
+
+func TestConvertToIDR_ReturnsNotImplemented(t *testing.T) {
+	e := echo.New()
+	h := handler.NewEmissionHandler(&mockEmissionClient{})
+	c, rec := newCtxWithUser(e, http.MethodGet, "", 1)
+	if err := h.ConvertToIDR(c); err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("want 501, got %d", rec.Code)
+	}
+}

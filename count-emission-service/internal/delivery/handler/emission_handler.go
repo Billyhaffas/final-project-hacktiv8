@@ -40,7 +40,7 @@ func (uh *EmissionHandler) CreateUserEmission(c *echo.Context) error {
 }
 
 func (uh *EmissionHandler) GetUserDailyEmission(c *echo.Context) error {
-	var userId int8
+	var userId int32
 	userId = 1
 	// if err != nil {
 	// 	return c.JSON(http.StatusBadRequest, helper.Respon{
@@ -63,7 +63,7 @@ func (uh *EmissionHandler) GetUserDailyEmission(c *echo.Context) error {
 }
 
 func (uh *EmissionHandler) GetUserMonthlyEmission(c *echo.Context) error {
-	var userId int8
+	var userId int32
 	userId = 1
 	// if err != nil {
 	// 	return c.JSON(http.StatusBadRequest, helper.Respon{
@@ -86,7 +86,7 @@ func (uh *EmissionHandler) GetUserMonthlyEmission(c *echo.Context) error {
 }
 
 func (uh *EmissionHandler) GetUserYearlyEmission(c *echo.Context) error {
-	var userId int8
+	var userId int32
 	userId = 1
 	// if err != nil {
 	// 	return c.JSON(http.StatusBadRequest, helper.Respon{
