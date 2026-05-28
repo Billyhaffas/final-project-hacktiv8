@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "./proto/generated";
+
+service Convert {
+    rpc ConvertToIDR (ConvertToIDRRequest) returns (ConvertToIDRResponse);
+}
+
+message ConvertToIDRRequest {
+    double emission_kg_co2 = 1;
+}
+
+message ConvertToIDRResponse {
+    double price_per_ton_usd = 1;
+    double exchange_rate_usd_idr = 2;
+    double total_idr = 3;
+}
