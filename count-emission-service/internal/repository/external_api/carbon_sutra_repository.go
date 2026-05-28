@@ -10,8 +10,6 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 type CarbonSutraExternalRepo struct {
@@ -23,10 +21,6 @@ func NewCarbonSutraRepository(client *http.Client) domain.CarbonSutraRepository 
 }
 
 func (repo *CarbonSutraExternalRepo) GetCarbonEmission(payload carbonsutra.CountEmisionBodyPayload) (*carbonsutra.CountEmisionThirdParty, error) {
-	err := godotenv.Load(".env")
-	if err != nil {
-		return nil, fmt.Errorf("error loading .env file: %v", err)
-	}
 	urlEndpoint := "https://carbonsutra1.p.rapidapi.com/vehicle_estimate_by_type"
 	data := url.Values{}
 	data.Set("vehicle_type", payload.VehicleType)

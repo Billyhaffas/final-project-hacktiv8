@@ -3,11 +3,9 @@ module count-emission-service
 go 1.25.5
 
 require (
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v5 v5.1.1
 	go.mongodb.org/mongo-driver v1.17.9
-	google.golang.org/genproto/googleapis/api v0.0.0-20260523011958-0a33c5d7ca68
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
 	gorm.io/driver/postgres v1.6.0

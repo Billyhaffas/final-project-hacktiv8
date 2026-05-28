@@ -5,6 +5,7 @@ import (
 	"count-emission-service/internal/domain"
 	"count-emission-service/internal/model/emission"
 	"count-emission-service/internal/model/thirdparty/carbonsutra"
+	"fmt"
 	"time"
 )
 
@@ -17,30 +18,40 @@ func NewEmissionUseCase(EmissionRepo domain.EmissionRepository, CarbonSutraRepo 
 	return &EmissionUseCase{EmissionRepository: EmissionRepo, CarbonSutraRepository: CarbonSutraRepo}
 }
 
+var zeroEmissionTypes = map[string]bool{
+	"Bicycle": true,
+	"Walk":    true,
+}
+
 func (uc *EmissionUseCase) CreateUserEmission(ctx context.Context, request *emission.EmissionBody) error {
-	payload := carbonsutra.CountEmisionBodyPayload{
+	var emissionKg float64
+
+	if !zeroEmissionTypes[request.VehicleType] {
+		payload := carbonsutra.CountEmisionBodyPayload{
+			VehicleType:   request.VehicleType,
+			FuelType:      request.FuelType,
+			DistanceValue: request.DistanceKm,
+			DistanceUnit:  "km",
+			IncludeWtt:    "Y",
+		}
+		responTP, err := uc.CarbonSutraRepository.GetCarbonEmission(payload)
+		if err != nil {
+			return fmt.Errorf("CreateUserEmission: external API: %w", err)
+		}
+		emissionKg = responTP.Data.Co2eKg
+	}
+
+	insertOrigin := emission.EmissionOrigin{
+		UserId:        request.UserId,
 		VehicleType:   request.VehicleType,
 		FuelType:      request.FuelType,
-		DistanceValue: request.DistanceKm,
-		DistanceUnit:  "km",
-		IncludeWtt:    "Y",
+		DistanceKm:    request.DistanceKm,
+		EmissionKgCo2: emissionKg,
+		RecordedAt:    time.Now(),
+		CreatedAt:     time.Now(),
 	}
-	responTP, err := uc.CarbonSutraRepository.GetCarbonEmission(payload)
-	if err != nil {
-		return err
-	}
-	insertOrigin := emission.EmissionOrigin{
-		UserId:      request.UserId,
-		VehicleType: request.VehicleType,
-		FuelType:    request.FuelType,
-		DistanceKm:  request.DistanceKm,
-	}
-	insertOrigin.EmissionKgCo2 = responTP.Data.Co2eKg
-	insertOrigin.RecordedAt = time.Now()
-	insertOrigin.CreatedAt = time.Now()
-	err = uc.EmissionRepository.CreateUserEmission(ctx, insertOrigin)
-	if err != nil {
-		return err
+	if err := uc.EmissionRepository.CreateUserEmission(ctx, insertOrigin); err != nil {
+		return fmt.Errorf("CreateUserEmission: %w", err)
 	}
 	return nil
 }

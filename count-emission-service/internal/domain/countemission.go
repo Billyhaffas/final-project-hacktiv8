@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"count-emission-service/internal/model/emission"
+	"count-emission-service/internal/model/preference"
 	"count-emission-service/internal/model/thirdparty/carbonsutra"
 
 	"github.com/labstack/echo/v5"
@@ -28,4 +29,14 @@ type EmissionHandler interface {
 	GetUserDailyEmission(c *echo.Context) error
 	GetUserMonthlyEmission(c *echo.Context) error
 	GetUserYearlyEmission(c *echo.Context) error
+}
+
+type PreferenceRepository interface {
+	GetUserPreferences(ctx context.Context, userID int32) (*preference.UserEmissionPreference, error)
+	UpsertUserPreferences(ctx context.Context, pref preference.UserEmissionPreference) (*preference.UserEmissionPreference, error)
+}
+
+type PreferenceUseCase interface {
+	GetUserPreferences(ctx context.Context, userID int32) (*preference.UserEmissionPreference, error)
+	SetUserPreferences(ctx context.Context, userID int32, countryCode string, customLimit *float64) (*preference.UserEmissionPreference, error)
 }
