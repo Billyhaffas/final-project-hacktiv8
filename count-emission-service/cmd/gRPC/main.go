@@ -33,9 +33,11 @@ func main() {
 	reflection.Register(server)
 
 	emissionRepo := repository.NewEmissionCollection(db)
-	carbonSutraRepo := externalapi.NewCarbonSutraRepository(httpClient)
+	preferenceRepo := repository.NewPreferenceRepository(db)
+	carbonSutraRepo := externalapi.NewCachedEmissionRepo(externalapi.NewCarbonSutraRepository(httpClient))
 	emissionUseCase := usecase.NewEmissionUseCase(emissionRepo, carbonSutraRepo)
-	emissionHandler := grpchandler.NewEmissionGRPCServer(emissionUseCase)
+	preferenceUseCase := usecase.NewPreferenceUseCase(preferenceRepo)
+	emissionHandler := grpchandler.NewEmissionGRPCServer(emissionUseCase, preferenceUseCase)
 
 	pb.RegisterEmissionServer(server, emissionHandler)
 

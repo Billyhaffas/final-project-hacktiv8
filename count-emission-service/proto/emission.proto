@@ -4,32 +4,13 @@ package pb;
 
 option go_package = "./proto/generated";
 
-import "google/api/annotations.proto";
-
 service Emission {
-    rpc CreateUserEmission (EmissionBody) returns (PostRespon) {
-        option (google.api.http) = {
-        post: "/v1/emissions"
-        body: "*"
-    };
-    }
-    rpc GetUserDailyEmission (Empty) returns (UserDailyEmission){
-        option (google.api.http) = {
-        get: "/v1/emissions/today"
-    };
-    }
-
-    rpc GetUserMonthlyEmission (Empty) returns (UserMonthlyEmission){
-        option (google.api.http) = {
-        get: "/v1/emissions/monthly"
-    };
-    }
-
-    rpc GetUserYearlyEmission (Empty) returns (UserYearlyEmission){
-        option (google.api.http) = {
-        get: "/v1/emissions/yearly"
-    };
-    }
+    rpc CreateUserEmission (EmissionBody) returns (PostRespon);
+    rpc GetUserDailyEmission (Empty) returns (UserDailyEmission);
+    rpc GetUserMonthlyEmission (Empty) returns (UserMonthlyEmission);
+    rpc GetUserYearlyEmission (Empty) returns (UserYearlyEmission);
+    rpc GetUserPreferences (Empty) returns (UserPreferences);
+    rpc SetUserPreferences (SetUserPreferencesBody) returns (UserPreferences);
 }
 
 message Empty {}
@@ -66,4 +47,15 @@ message UserYearlyEmission {
   int32 user_id = 1;
   repeated UserMonthlyEmissionDetail monthly_emissions = 2;
   double total_emission_yearly_kg_co2 = 3;
+}
+
+message UserPreferences {
+  int32 user_id = 1;
+  string country_code = 2;
+  double custom_daily_limit_kg_co2 = 3;
+}
+
+message SetUserPreferencesBody {
+  string country_code = 1;
+  double custom_daily_limit_kg_co2 = 2;
 }
