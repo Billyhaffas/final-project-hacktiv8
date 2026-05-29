@@ -1,41 +1,68 @@
 version: '3.8'
 
 services:
-  # 1. Count Emission Service
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api_gateway
+    ports:
+      - "8080:8080"
+    env_file: .env
+    depends_on:
+      - auth-service
+      - count-emission-service
+      - notification-service
+      - convert-emission-service
+    networks:
+      - climate-network
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth_service
+    ports:
+      - "8081:8081"
+    env_file: .env
+    networks:
+      - climate-network
+
   count-emission-service:
     build:
       context: ./count-emission-service
       dockerfile: Dockerfile
     container_name: count_emission_service
     ports:
-      - '8081:8081'
-    environment:
-      - PORT=8081
-    # Env file reads local keys from your service folder
-    env_file:
-      - ./count-emission-service/.env
+      - "50051:50051"
+    env_file: .env
     networks:
-      - emission-network
+      - climate-network
 
-  # 2. Notification Service
   notification-service:
     build:
       context: ./notification-service
       dockerfile: Dockerfile
     container_name: notification_service
     ports:
-      - '8080:8080'
-    environment:
-      - PORT=8080
-      # Route internally to the sibling container within the docker bridge network
-      - EMISSION_SERVICE_URL=http://count-emission-service:8081
-    env_file:
-      - ./notification-service/.env
+      - "50052:50052"
+    env_file: .env
     depends_on:
       - count-emission-service
     networks:
-      - emission-network
+      - climate-network
+
+  convert-emission-service:
+    build:
+      context: ./convert-emission-service
+      dockerfile: Dockerfile
+    container_name: convert_emission_service
+    ports:
+      - "50053:50053"
+    env_file: .env
+    networks:
+      - climate-network
 
 networks:
-  emission-network:
+  climate-network:
     driver: bridge

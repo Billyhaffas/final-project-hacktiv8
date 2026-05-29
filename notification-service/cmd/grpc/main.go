@@ -7,6 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
@@ -16,6 +17,14 @@ import (
 	pbemission "notification-service/proto/emission"
 	pb "notification-service/proto/generated"
 )
+
+// grpcCreds returns TLS credentials for Heroku (GRPC_USE_TLS=true) or insecure for local/docker.
+func grpcCreds() grpc.DialOption {
+	if os.Getenv("GRPC_USE_TLS") == "true" {
+		return grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, ""))
+	}
+	return grpc.WithTransportCredentials(insecure.NewCredentials())
+}
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -27,7 +36,7 @@ func main() {
 		emissionAddr = "count-emission-service:50051"
 	}
 
-	emissionConn, err := grpc.NewClient(emissionAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	emissionConn, err := grpc.NewClient(emissionAddr, grpcCreds())
 	if err != nil {
 		log.Fatalf("failed to connect to count-emission-service at %s: %v", emissionAddr, err)
 	}
@@ -41,7 +50,10 @@ func main() {
 	pb.RegisterNotificationServer(server, notifHandler)
 	reflection.Register(server)
 
-	port := os.Getenv("NOTIFICATION_GRPC_PORT")
+	port := os.Getenv("PORT") // Heroku injects $PORT
+	if port == "" {
+		port = os.Getenv("NOTIFICATION_GRPC_PORT")
+	}
 	if port == "" {
 		port = "50052"
 	}

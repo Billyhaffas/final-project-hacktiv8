@@ -11,7 +11,7 @@ RUN go mod download
 COPY . .
 
 # Build a statically linked binary optimized for production
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o main ./cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o main ./cmd/gRPC/main.go
 
 # --- Stage 2: Final lightweight image ---
 FROM alpine:3.19
@@ -23,8 +23,7 @@ RUN apk --no-cache add ca-certificates
 
 # Copy binary from builder stage
 COPY --from=builder /app/main .
-COPY .env .env
 
-EXPOSE 8081
+EXPOSE 50051
 
 CMD ["./main"]

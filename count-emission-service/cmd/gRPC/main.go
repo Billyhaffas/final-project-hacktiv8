@@ -7,13 +7,14 @@ import (
 	repository "count-emission-service/internal/repository/internal_repo"
 	"count-emission-service/internal/usecase"
 	pb "count-emission-service/proto/generated"
+	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
-	"google.golang.org/grpc/reflection"
-
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -21,10 +22,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	// server := grpc.NewServer(
-	// 	grpc.UnaryInterceptor(jwtMiddleware.Unary()),
-	// )
 
 	server := grpc.NewServer()
 	httpClient := &http.Client{
@@ -41,12 +38,20 @@ func main() {
 
 	pb.RegisterEmissionServer(server, emissionHandler)
 
-	lis, err := net.Listen("tcp", ":50051")
-	if err != nil {
-		panic(err)
+	port := os.Getenv("PORT") // Heroku injects $PORT
+	if port == "" {
+		port = os.Getenv("EMISSION_GRPC_PORT")
 	}
-	if err := server.Serve(lis); err != nil {
-		panic(err)
+	if port == "" {
+		port = "50051"
 	}
 
+	lis, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		log.Fatalf("failed to listen on port %s: %v", port, err)
+	}
+	log.Printf("count-emission-service gRPC server running on :%s", port)
+	if err := server.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }

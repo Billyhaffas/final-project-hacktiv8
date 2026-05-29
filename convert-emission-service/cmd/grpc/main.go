@@ -30,7 +30,10 @@ func main() {
 	pb.RegisterConvertServer(server, handler)
 	reflection.Register(server)
 
-	port := os.Getenv("CONVERT_GRPC_PORT")
+	port := os.Getenv("PORT") // Heroku injects $PORT
+	if port == "" {
+		port = os.Getenv("CONVERT_GRPC_PORT")
+	}
 	if port == "" {
 		port = "50053"
 	}

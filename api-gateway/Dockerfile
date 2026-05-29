@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o main ./cmd/grpc/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o main ./cmd/main.go
 
 # --- Stage 2: Final lightweight image ---
 FROM alpine:3.19
@@ -19,6 +19,6 @@ RUN apk --no-cache add ca-certificates
 
 COPY --from=builder /app/main .
 
-EXPOSE 50053
+EXPOSE 8080
 
 CMD ["./main"]

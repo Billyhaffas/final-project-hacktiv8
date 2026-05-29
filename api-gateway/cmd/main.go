@@ -3,8 +3,8 @@ package main
 import (
 	"api-gateway/internal/handler"
 	"api-gateway/internal/router"
-	pb "api-gateway/proto/emission"
 	pbconvert "api-gateway/proto/convert"
+	pb "api-gateway/proto/emission"
 	pbnotif "api-gateway/proto/notification"
 	"log"
 	"os"
@@ -12,8 +12,17 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+// grpcCreds returns TLS credentials for Heroku (GRPC_USE_TLS=true) or insecure for local/docker.
+func grpcCreds() grpc.DialOption {
+	if os.Getenv("GRPC_USE_TLS") == "true" {
+		return grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, ""))
+	}
+	return grpc.WithTransportCredentials(insecure.NewCredentials())
+}
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -22,7 +31,7 @@ func main() {
 
 	emissionConn, err := grpc.NewClient(
 		os.Getenv("COUNT_EMISSION_SERVICE_ADDR"),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpcCreds(),
 	)
 	if err != nil {
 		log.Fatalf("failed to connect to count-emission-service: %v", err)
@@ -31,7 +40,7 @@ func main() {
 
 	notifConn, err := grpc.NewClient(
 		os.Getenv("NOTIFICATION_SERVICE_ADDR"),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpcCreds(),
 	)
 	if err != nil {
 		log.Fatalf("failed to connect to notification-service: %v", err)
@@ -40,7 +49,7 @@ func main() {
 
 	convertConn, err := grpc.NewClient(
 		os.Getenv("CONVERT_EMISSION_SERVICE_ADDR"),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpcCreds(),
 	)
 	if err != nil {
 		log.Fatalf("failed to connect to convert-emission-service: %v", err)
@@ -60,7 +69,10 @@ func main() {
 	e := echo.New()
 	router.Setup(e, authHandler, emissionHandler, prefHandler, alertHandler, convertHandler)
 
-	port := os.Getenv("GATEWAY_PORT")
+	port := os.Getenv("PORT") // Heroku injects $PORT
+	if port == "" {
+		port = os.Getenv("GATEWAY_PORT")
+	}
 	if port == "" {
 		port = "8080"
 	}

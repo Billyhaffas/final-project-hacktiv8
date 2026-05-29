@@ -34,7 +34,10 @@ func main() {
 	auth.POST("/forgot-password", authHandler.ForgotPassword)
 	auth.POST("/reset-password", authHandler.ResetPassword)
 
-	port := os.Getenv("AUTH_PORT")
+	port := os.Getenv("PORT") // Heroku injects $PORT
+	if port == "" {
+		port = os.Getenv("AUTH_PORT")
+	}
 	if port == "" {
 		port = "8081"
 	}
