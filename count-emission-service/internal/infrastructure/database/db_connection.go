@@ -11,9 +11,8 @@ import (
 )
 
 func ConnectPostgres() (*gorm.DB, error) {
-	err := godotenv.Load(".env")
-	if err != nil {
-		return nil, fmt.Errorf("error loading .env file: %v", err)
+	if err := godotenv.Load(".env"); err != nil {
+		fmt.Println("no .env file found, using system environment")
 	}
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
