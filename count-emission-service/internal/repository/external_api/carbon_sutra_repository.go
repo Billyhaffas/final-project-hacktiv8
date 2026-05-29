@@ -55,5 +55,8 @@ func (repo *CarbonSutraExternalRepo) GetCarbonEmission(payload carbonsutra.Count
 	if err != nil {
 		return nil, err
 	}
+	if !result.Success {
+		return nil, fmt.Errorf("CarbonSutra API error: status %d", result.Status)
+	}
 	return &result, nil
 }
