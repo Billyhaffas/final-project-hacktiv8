@@ -156,7 +156,7 @@ definitions:
         example: 5
         type: number
     type: object
-host: localhost:8080
+host: 165.245.178.118:8080
 info:
   contact: {}
   description: Personal Carbon Emission Tracker — log commutes, monitor limits, get

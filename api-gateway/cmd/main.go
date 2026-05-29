@@ -1,7 +1,7 @@
 // @title          Climate Action API
 // @version        1.0
 // @description    Personal Carbon Emission Tracker — log commutes, monitor limits, get monthly reports.
-// @host           localhost:8080
+// @host           165.245.178.118:8080
 // @BasePath       /api/v1
 // @schemes        http https
 // @securityDefinitions.apikey  BearerAuth
