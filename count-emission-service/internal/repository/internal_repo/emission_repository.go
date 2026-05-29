@@ -47,6 +47,24 @@ func (emr *EmissionRepository) GetUserDailyEmission(ctx context.Context, userId 
 	return &userEmission, nil
 }
 
+func (emr *EmissionRepository) GetDailyTotal(ctx context.Context, userId int32, date string) (float64, int32, error) {
+	var total float64
+	var cnt int64
+
+	if err := emr.DB.WithContext(ctx).Table("emissions").
+		Where("user_id = ? AND DATE(recorded_at) = ?", userId, date).
+		Select("COALESCE(SUM(emission_kg_co2), 0)").
+		Scan(&total).Error; err != nil {
+		return 0, 0, err
+	}
+	if err := emr.DB.WithContext(ctx).Table("emissions").
+		Where("user_id = ? AND DATE(recorded_at) = ?", userId, date).
+		Count(&cnt).Error; err != nil {
+		return 0, 0, err
+	}
+	return total, int32(cnt), nil
+}
+
 func (emr *EmissionRepository) GetUserMonthlyEmission(ctx context.Context, userId int32) (*emission.UserMonthlyEmission, error) {
 	var (
 		result              []emission.UserDailyEmission

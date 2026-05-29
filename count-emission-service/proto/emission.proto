@@ -11,6 +11,17 @@ service Emission {
     rpc GetUserYearlyEmission (Empty) returns (UserYearlyEmission);
     rpc GetUserPreferences (Empty) returns (UserPreferences);
     rpc SetUserPreferences (SetUserPreferencesBody) returns (UserPreferences);
+    rpc GetDailyTotal (DailyTotalRequest) returns (DailyTotalResponse);
+}
+
+message DailyTotalRequest {
+  int32 user_id = 1;
+  string date = 2;
+}
+
+message DailyTotalResponse {
+  float daily_total_kg = 1;
+  int32 trip_count = 2;
 }
 
 message Empty {}

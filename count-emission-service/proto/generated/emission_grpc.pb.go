@@ -8,6 +8,7 @@ package generated
 
 import (
 	context "context"
+	dailytotal "count-emission-service/proto/dailytotal"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -25,6 +26,7 @@ const (
 	Emission_GetUserYearlyEmission_FullMethodName  = "/pb.Emission/GetUserYearlyEmission"
 	Emission_GetUserPreferences_FullMethodName     = "/pb.Emission/GetUserPreferences"
 	Emission_SetUserPreferences_FullMethodName     = "/pb.Emission/SetUserPreferences"
+	Emission_GetDailyTotal_FullMethodName          = "/pb.Emission/GetDailyTotal"
 )
 
 // EmissionClient is the client API for Emission service.
@@ -37,6 +39,7 @@ type EmissionClient interface {
 	GetUserYearlyEmission(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*UserYearlyEmission, error)
 	GetUserPreferences(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*UserPreferences, error)
 	SetUserPreferences(ctx context.Context, in *SetUserPreferencesBody, opts ...grpc.CallOption) (*UserPreferences, error)
+	GetDailyTotal(ctx context.Context, in *dailytotal.DailyTotalRequest, opts ...grpc.CallOption) (*dailytotal.DailyTotalResponse, error)
 }
 
 type emissionClient struct {
@@ -107,6 +110,16 @@ func (c *emissionClient) SetUserPreferences(ctx context.Context, in *SetUserPref
 	return out, nil
 }
 
+func (c *emissionClient) GetDailyTotal(ctx context.Context, in *dailytotal.DailyTotalRequest, opts ...grpc.CallOption) (*dailytotal.DailyTotalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(dailytotal.DailyTotalResponse)
+	err := c.cc.Invoke(ctx, Emission_GetDailyTotal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EmissionServer is the server API for Emission service.
 // All implementations must embed UnimplementedEmissionServer
 // for forward compatibility.
@@ -117,6 +130,7 @@ type EmissionServer interface {
 	GetUserYearlyEmission(context.Context, *Empty) (*UserYearlyEmission, error)
 	GetUserPreferences(context.Context, *Empty) (*UserPreferences, error)
 	SetUserPreferences(context.Context, *SetUserPreferencesBody) (*UserPreferences, error)
+	GetDailyTotal(context.Context, *dailytotal.DailyTotalRequest) (*dailytotal.DailyTotalResponse, error)
 	mustEmbedUnimplementedEmissionServer()
 }
 
@@ -144,6 +158,9 @@ func (UnimplementedEmissionServer) GetUserPreferences(context.Context, *Empty) (
 }
 func (UnimplementedEmissionServer) SetUserPreferences(context.Context, *SetUserPreferencesBody) (*UserPreferences, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetUserPreferences not implemented")
+}
+func (UnimplementedEmissionServer) GetDailyTotal(context.Context, *dailytotal.DailyTotalRequest) (*dailytotal.DailyTotalResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDailyTotal not implemented")
 }
 func (UnimplementedEmissionServer) mustEmbedUnimplementedEmissionServer() {}
 func (UnimplementedEmissionServer) testEmbeddedByValue()                  {}
@@ -274,6 +291,24 @@ func _Emission_SetUserPreferences_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Emission_GetDailyTotal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(dailytotal.DailyTotalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EmissionServer).GetDailyTotal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Emission_GetDailyTotal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EmissionServer).GetDailyTotal(ctx, req.(*dailytotal.DailyTotalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Emission_ServiceDesc is the grpc.ServiceDesc for Emission service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +339,10 @@ var Emission_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetUserPreferences",
 			Handler:    _Emission_SetUserPreferences_Handler,
+		},
+		{
+			MethodName: "GetDailyTotal",
+			Handler:    _Emission_GetDailyTotal_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

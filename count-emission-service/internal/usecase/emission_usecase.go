@@ -64,6 +64,14 @@ func (uc *EmissionUseCase) GetUserDailyEmission(ctx context.Context, userId int3
 	return userEmission, nil
 }
 
+func (uc *EmissionUseCase) GetDailyTotal(ctx context.Context, userId int32, date string) (float64, int32, error) {
+	total, count, err := uc.EmissionRepository.GetDailyTotal(ctx, userId, date)
+	if err != nil {
+		return 0, 0, fmt.Errorf("GetDailyTotal: %w", err)
+	}
+	return total, count, nil
+}
+
 func (uc *EmissionUseCase) GetUserMonthlyEmission(ctx context.Context, userId int32) (*emission.UserMonthlyEmission, error) {
 	userMonthlyEmission, err := uc.EmissionRepository.GetUserMonthlyEmission(ctx, userId)
 	if err != nil {

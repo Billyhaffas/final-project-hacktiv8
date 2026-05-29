@@ -5,6 +5,7 @@ import (
 	"count-emission-service/internal/domain"
 	"count-emission-service/internal/model/emission"
 	pb "count-emission-service/proto/generated"
+	"count-emission-service/proto/dailytotal"
 	"strconv"
 
 	"google.golang.org/grpc/codes"
@@ -142,6 +143,17 @@ func (s *EmissionGRPCServer) GetUserPreferences(ctx context.Context, req *pb.Emp
 		resp.CustomDailyLimitKgCo2 = *pref.CustomDailyLimitKgCo2
 	}
 	return resp, nil
+}
+
+func (s *EmissionGRPCServer) GetDailyTotal(ctx context.Context, req *dailytotal.DailyTotalRequest) (*dailytotal.DailyTotalResponse, error) {
+	total, count, err := s.EmissioonUseCase.GetDailyTotal(ctx, req.UserId, req.Date)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "GetDailyTotal: %v", err)
+	}
+	return &dailytotal.DailyTotalResponse{
+		DailyTotalKg: float32(total),
+		TripCount:    count,
+	}, nil
 }
 
 func (s *EmissionGRPCServer) SetUserPreferences(ctx context.Context, req *pb.SetUserPreferencesBody) (*pb.UserPreferences, error) {

@@ -22,8 +22,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Emission_GetDailyTotal_FullMethodName      = "/generated.Emission/GetDailyTotal"
-	Emission_GetUserPreferences_FullMethodName = "/generated.Emission/GetUserPreferences"
+	Emission_GetDailyTotal_FullMethodName      = "/pb.Emission/GetDailyTotal"
+	Emission_GetUserPreferences_FullMethodName = "/pb.Emission/GetUserPreferences"
 )
 
 // EmissionClient is the client API for Emission service.
@@ -145,7 +145,7 @@ func _Emission_GetUserPreferences_Handler(srv interface{}, ctx context.Context, 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Emission_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "generated.Emission",
+	ServiceName: "pb.Emission",
 	HandlerType: (*EmissionServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

@@ -17,12 +17,14 @@ type EmissionRepository interface {
 	GetUserDailyEmission(ctx context.Context, userId int32) (*emission.UserDailyEmission, error)
 	GetUserMonthlyEmission(ctx context.Context, userId int32) (*emission.UserMonthlyEmission, error)
 	GetUserYearlyEmission(ctx context.Context, userId int32) (*emission.UserYearlyEmission, error)
+	GetDailyTotal(ctx context.Context, userId int32, date string) (float64, int32, error)
 }
 type EmissionUseCase interface {
 	CreateUserEmission(ctx context.Context, request *emission.EmissionBody) error
 	GetUserDailyEmission(ctx context.Context, userId int32) (*emission.UserDailyEmission, error)
 	GetUserMonthlyEmission(ctx context.Context, userId int32) (*emission.UserMonthlyEmission, error)
 	GetUserYearlyEmission(ctx context.Context, userId int32) (*emission.UserYearlyEmission, error)
+	GetDailyTotal(ctx context.Context, userId int32, date string) (float64, int32, error)
 }
 type EmissionHandler interface {
 	CreateUserEmission(c *echo.Context) error

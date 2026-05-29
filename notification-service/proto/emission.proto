@@ -2,7 +2,7 @@ syntax = "proto3";
 
 // Client-side contract matching count-emission-service.
 // Only the RPCs notification-service needs are declared here.
-package generated;
+package pb;
 
 option go_package = "notification-service/proto/emission";
 

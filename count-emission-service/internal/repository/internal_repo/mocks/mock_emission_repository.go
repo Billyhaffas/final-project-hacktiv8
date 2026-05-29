@@ -40,3 +40,8 @@ func (m *MockEmissionRepository) GetUserYearlyEmission(ctx context.Context, user
 	}
 	return args.Get(0).(*emission.UserYearlyEmission), args.Error(1)
 }
+
+func (m *MockEmissionRepository) GetDailyTotal(ctx context.Context, userId int32, date string) (float64, int32, error) {
+	args := m.Called(ctx, userId, date)
+	return args.Get(0).(float64), args.Get(1).(int32), args.Error(2)
+}
