@@ -51,12 +51,12 @@ func (repo *CarbonSutraExternalRepo) GetCarbonEmission(payload carbonsutra.Count
 	defer resp.Body.Close()
 	var result carbonsutra.CountEmisionThirdParty
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("CarbonSutra API error: HTTP %d", resp.StatusCode)
+	}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
 		return nil, err
-	}
-	if !result.Success {
-		return nil, fmt.Errorf("CarbonSutra API error: status %d", result.Status)
 	}
 	return &result, nil
 }
