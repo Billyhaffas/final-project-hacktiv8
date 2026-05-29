@@ -6,12 +6,19 @@ import (
 
 	_ "api-gateway/docs"
 
+	"github.com/labstack/echo/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/labstack/echo/v5"
 )
 
 func Setup(e *echo.Echo, auth *handler.AuthHandler, emission *handler.EmissionHandler,
 	pref *handler.PreferenceHandler, alert *handler.AlertHandler, cvt *handler.ConvertHandler) {
+
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Content-Type", "Authorization"},
+	}))
 
 	// Swagger UI — http://host:8080/swagger/index.html
 	e.GET("/swagger/*", echo.WrapHandler(httpSwagger.WrapHandler))
