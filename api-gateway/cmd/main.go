@@ -1,3 +1,13 @@
+// @title          Climate Action API
+// @version        1.0
+// @description    Personal Carbon Emission Tracker — log commutes, monitor limits, get monthly reports.
+// @host           localhost:8080
+// @BasePath       /api/v1
+// @schemes        http https
+// @securityDefinitions.apikey  BearerAuth
+// @in                          header
+// @name                        Authorization
+// @description                 Enter your JWT as: Bearer <token>
 package main
 
 import (

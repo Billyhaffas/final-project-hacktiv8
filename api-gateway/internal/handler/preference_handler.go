@@ -18,6 +18,15 @@ func NewPreferenceHandler(client pb.EmissionClient) *PreferenceHandler {
 	return &PreferenceHandler{client: client}
 }
 
+// GetPreferences godoc
+// @Summary      Get user emission preferences
+// @Tags         preferences
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  SuccessResponse{data=PreferencesData}
+// @Failure      401  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /preferences [get]
 func (h *PreferenceHandler) GetPreferences(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 
@@ -36,6 +45,18 @@ func (h *PreferenceHandler) GetPreferences(c *echo.Context) error {
 	}))
 }
 
+// UpdatePreferences godoc
+// @Summary      Update user emission preferences
+// @Tags         preferences
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body      UpdatePreferencesRequest  true  "Preferences to update"
+// @Success      200   {object}  SuccessResponse{data=PreferencesData}
+// @Failure      400   {object}  ErrorResponse
+// @Failure      401   {object}  ErrorResponse
+// @Failure      500   {object}  ErrorResponse
+// @Router       /preferences [put]
 func (h *PreferenceHandler) UpdatePreferences(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 

@@ -18,6 +18,17 @@ func NewConvertHandler(client pbconvert.ConvertClient) *ConvertHandler {
 	return &ConvertHandler{client: client}
 }
 
+// ConvertToIDR godoc
+// @Summary      Convert kg CO₂ to IDR value
+// @Tags         emissions
+// @Produce      json
+// @Security     BearerAuth
+// @Param        kg   query     number  true  "Emission in kg CO₂"  example(100.0)
+// @Success      200  {object}  SuccessResponse{data=ConvertData}
+// @Failure      400  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /emissions/convert [get]
 func (h *ConvertHandler) ConvertToIDR(c *echo.Context) error {
 	kgStr := c.QueryParam("kg")
 	if kgStr == "" {
@@ -37,9 +48,9 @@ func (h *ConvertHandler) ConvertToIDR(c *echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, helper.Success(map[string]interface{}{
-		"emission_kg_co2":       kg,
-		"price_per_ton_usd":     resp.PricePerTonUsd,
-		"exchange_rate_usd_idr": resp.ExchangeRateUsdIdr,
-		"total_idr":             resp.TotalIdr,
+		"emission_kg_co2":        kg,
+		"price_per_ton_usd":      resp.PricePerTonUsd,
+		"exchange_rate_usd_idr":  resp.ExchangeRateUsdIdr,
+		"total_idr":              resp.TotalIdr,
 	}))
 }

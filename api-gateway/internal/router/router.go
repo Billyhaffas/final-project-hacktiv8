@@ -4,21 +4,28 @@ import (
 	"api-gateway/internal/handler"
 	mw "api-gateway/internal/middleware"
 
+	_ "api-gateway/docs"
+
+	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/labstack/echo/v5"
 )
 
 func Setup(e *echo.Echo, auth *handler.AuthHandler, emission *handler.EmissionHandler,
 	pref *handler.PreferenceHandler, alert *handler.AlertHandler, cvt *handler.ConvertHandler) {
+
+	// Swagger UI — http://host:8080/swagger/index.html
+	e.GET("/swagger/*", echo.WrapHandler(httpSwagger.WrapHandler))
+
 	api := e.Group("/api/v1")
 
 	// Auth — proxied to auth-service
 	authGroup := api.Group("/auth")
-	authGroup.POST("/register", auth.Proxy)
-	authGroup.POST("/login", auth.Proxy)
-	authGroup.POST("/refresh", auth.Proxy)
-	authGroup.POST("/forgot-password", auth.Proxy)
-	authGroup.POST("/reset-password", auth.Proxy)
-	authGroup.POST("/logout", auth.Proxy, mw.JWT)
+	authGroup.POST("/register", auth.Register)
+	authGroup.POST("/login", auth.Login)
+	authGroup.POST("/refresh", auth.Refresh)
+	authGroup.POST("/forgot-password", auth.ForgotPassword)
+	authGroup.POST("/reset-password", auth.ResetPassword)
+	authGroup.POST("/logout", auth.Logout, mw.JWT)
 
 	// Emissions — all require JWT
 	emissionGroup := api.Group("/emissions", mw.JWT)

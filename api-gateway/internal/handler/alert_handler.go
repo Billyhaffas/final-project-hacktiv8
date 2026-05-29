@@ -20,6 +20,15 @@ func NewAlertHandler(client pbnotif.NotificationClient) *AlertHandler {
 	return &AlertHandler{client: client}
 }
 
+// CheckAlert godoc
+// @Summary      Check today's daily emission limit
+// @Tags         emissions
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  SuccessResponse{data=AlertData}
+// @Failure      401  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /emissions/alert [get]
 func (h *AlertHandler) CheckAlert(c *echo.Context) error {
 	userID := c.Get("user_id").(int)
 	date := time.Now().Format("2006-01-02")

@@ -1,0 +1,552 @@
+basePath: /api/v1
+definitions:
+  handler.AlertData:
+    properties:
+      daily_limit_kg:
+        example: 6.3
+        type: number
+      daily_total_kg:
+        example: 3.5
+        type: number
+      is_exceeded:
+        example: false
+        type: boolean
+      message:
+        example: You are within today's limit
+        type: string
+      threshold_source:
+        example: country
+        type: string
+    type: object
+  handler.ConvertData:
+    properties:
+      emission_kg_co2:
+        example: 100
+        type: number
+      exchange_rate_usd_idr:
+        example: 16250
+        type: number
+      price_per_ton_usd:
+        example: 23
+        type: number
+      total_idr:
+        example: 37375
+        type: number
+    type: object
+  handler.DailyTotalData:
+    properties:
+      date:
+        example: "2026-05-28"
+        type: string
+      total_emission_kg_co2:
+        example: 3.5
+        type: number
+      user_id:
+        example: 1
+        type: integer
+    type: object
+  handler.EmissionData:
+    properties:
+      message:
+        example: Emission has been created
+        type: string
+    type: object
+  handler.ErrorInfo:
+    properties:
+      code:
+        example: VALIDATION_ERROR
+        type: string
+      message:
+        example: vehicle_type is required
+        type: string
+    type: object
+  handler.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/handler.ErrorInfo'
+      success:
+        example: false
+        type: boolean
+    type: object
+  handler.ForgotPasswordRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+    type: object
+  handler.LogEmissionRequest:
+    properties:
+      distance_km:
+        example: 15.5
+        type: number
+      fuel_type:
+        example: Petrol
+        type: string
+      vehicle_type:
+        example: Car-Size-Medium
+        type: string
+    type: object
+  handler.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+  handler.LogoutRequest:
+    properties:
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  handler.PreferencesData:
+    properties:
+      country_code:
+        example: IDN
+        type: string
+      custom_daily_limit_kg_co2:
+        example: 5
+        type: number
+      user_id:
+        example: 1
+        type: integer
+    type: object
+  handler.RefreshRequest:
+    properties:
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  handler.RegisterRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+  handler.ResetPasswordRequest:
+    properties:
+      password:
+        example: newpassword123
+        type: string
+      token:
+        example: reset-token-here
+        type: string
+    type: object
+  handler.SuccessResponse:
+    properties:
+      data: {}
+      success:
+        example: true
+        type: boolean
+    type: object
+  handler.UpdatePreferencesRequest:
+    properties:
+      country_code:
+        example: IDN
+        type: string
+      custom_daily_limit_kg_co2:
+        example: 5
+        type: number
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Personal Carbon Emission Tracker — log commutes, monitor limits, get
+    monthly reports.
+  title: Climate Action API
+  version: "1.0"
+paths:
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Email address
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Request password reset email
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Login and get JWT
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Refresh token to revoke
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LogoutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke refresh token
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Refresh token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Registration data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Register new user
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Reset token and new password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Complete password reset
+      tags:
+      - auth
+  /emissions:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Trip details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LogEmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.EmissionData'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Log a commute trip
+      tags:
+      - emissions
+  /emissions/alert:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.AlertData'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Check today's daily emission limit
+      tags:
+      - emissions
+  /emissions/convert:
+    get:
+      parameters:
+      - description: Emission in kg CO₂
+        example: 100
+        in: query
+        name: kg
+        required: true
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.ConvertData'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Convert kg CO₂ to IDR value
+      tags:
+      - emissions
+  /emissions/report:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get monthly emission report
+      tags:
+      - emissions
+  /emissions/today:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.DailyTotalData'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get today's total emission
+      tags:
+      - emissions
+  /preferences:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.PreferencesData'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user emission preferences
+      tags:
+      - preferences
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Preferences to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdatePreferencesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.PreferencesData'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user emission preferences
+      tags:
+      - preferences
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: 'Enter your JWT as: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
